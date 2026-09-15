@@ -19,6 +19,7 @@ class TransactionItem extends Model
         'price',
         'cost_price',
         'qty',
+        'note',
         'subtotal',
     ];
 

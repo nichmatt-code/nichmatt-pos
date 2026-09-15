@@ -2,18 +2,31 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\Store;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_guests_are_redirected_to_login(): void
+    use RefreshDatabase;
+
+    public function test_guests_see_the_landing_page(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('login'));
+        $response->assertOk();
+        $response->assertSee('Daftar Gratis');
+    }
+
+    public function test_authenticated_users_also_see_the_landing_page(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $user = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        $response = $this->actingAs($user)->get('/');
+
+        $response->assertOk();
+        $response->assertSee('Buka Dashboard');
     }
 }

@@ -40,6 +40,12 @@
 
     <div>{{ $transaction->transaction_no }}</div>
     <div class="muted">{{ $transaction->created_at->format('d/m/Y H:i') }} - Kasir: {{ $transaction->user->name }}</div>
+    @if ($transaction->customer_name)
+        <div>Customer: {{ $transaction->customer_name }}</div>
+    @endif
+    @if ($transaction->note)
+        <div class="muted">Catatan: {{ $transaction->note }}</div>
+    @endif
 
     <div class="line"></div>
 
@@ -52,6 +58,11 @@
                 <td>{{ $item->qty }} x {{ number_format($item->price, 0, ',', '.') }}</td>
                 <td class="right">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
             </tr>
+            @if ($item->note)
+                <tr>
+                    <td colspan="2" class="muted">- {{ $item->note }}</td>
+                </tr>
+            @endif
         @endforeach
     </table>
 

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureIsDeveloper;
+use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\EnsureStoreHasAccess;
 use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
@@ -17,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'store.access' => EnsureStoreHasAccess::class,
+            'permission' => EnsurePermission::class,
+            'developer' => EnsureIsDeveloper::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

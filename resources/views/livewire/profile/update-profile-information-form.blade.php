@@ -64,11 +64,11 @@ new class extends Component
 
 <section>
     <header>
-        <h2 class="text-lg font-semibold text-slate-900">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
             {{ __('Informasi Profil') }}
         </h2>
 
-        <p class="mt-1 text-sm text-slate-500">
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {{ __('Perbarui nama dan alamat email akun Anda.') }}
         </p>
     </header>
@@ -87,16 +87,16 @@ new class extends Component
 
             @if (auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! auth()->user()->hasVerifiedEmail())
                 <div>
-                    <p class="text-sm mt-2 text-slate-600">
+                    <p class="text-sm mt-2 text-slate-600 dark:text-slate-400">
                         {{ __('Email Anda belum terverifikasi.') }}
 
-                        <button wire:click.prevent="sendVerification" class="underline text-sm text-slate-600 hover:text-slate-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">
+                        <button wire:click.prevent="sendVerification" class="underline text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">
                             {{ __('Kirim ulang email verifikasi.') }}
                         </button>
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-emerald-600">
+                        <p class="mt-2 font-medium text-sm text-emerald-600 dark:text-emerald-400">
                             {{ __('Link verifikasi baru telah dikirim ke email Anda.') }}
                         </p>
                     @endif

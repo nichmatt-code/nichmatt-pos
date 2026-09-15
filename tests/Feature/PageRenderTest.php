@@ -18,7 +18,7 @@ class PageRenderTest extends TestCase
 
         $this->actingAs($owner);
 
-        foreach (['dashboard', 'pos', 'products', 'categories', 'reports/sales', 'billing/subscribe', 'profile'] as $uri) {
+        foreach (['dashboard', 'pos', 'products', 'categories', 'reports/sales', 'billing/subscribe', 'profile', 'branch', 'team', 'preparation'] as $uri) {
             $this->get($uri)->assertOk();
         }
     }

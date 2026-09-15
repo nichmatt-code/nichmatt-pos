@@ -40,11 +40,11 @@ new class extends Component
 
 <section>
     <header>
-        <h2 class="text-lg font-semibold text-slate-900">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
             {{ __('Ubah Password') }}
         </h2>
 
-        <p class="mt-1 text-sm text-slate-500">
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {{ __('Gunakan password yang panjang dan acak agar akun tetap aman.') }}
         </p>
     </header>

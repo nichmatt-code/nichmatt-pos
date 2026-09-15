@@ -17,7 +17,10 @@ class Transaction extends Model
     protected $fillable = [
         'store_id',
         'user_id',
+        'self_order_id',
         'transaction_no',
+        'customer_name',
+        'note',
         'subtotal',
         'discount',
         'total',
@@ -25,6 +28,7 @@ class Transaction extends Model
         'paid_amount',
         'change_amount',
         'status',
+        'prepared_at',
     ];
 
     protected function casts(): array
@@ -35,7 +39,13 @@ class Transaction extends Model
             'total' => 'integer',
             'paid_amount' => 'integer',
             'change_amount' => 'integer',
+            'prepared_at' => 'datetime',
         ];
+    }
+
+    public function isPrepared(): bool
+    {
+        return $this->prepared_at !== null;
     }
 
     public function user(): BelongsTo
@@ -46,5 +56,10 @@ class Transaction extends Model
     public function items(): HasMany
     {
         return $this->hasMany(TransactionItem::class);
+    }
+
+    public function selfOrder(): BelongsTo
+    {
+        return $this->belongsTo(SelfOrder::class);
     }
 }

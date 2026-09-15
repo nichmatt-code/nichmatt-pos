@@ -25,11 +25,11 @@ new class extends Component
 
 <section class="space-y-6">
     <header>
-        <h2 class="text-lg font-semibold text-rose-700">
+        <h2 class="text-lg font-semibold text-rose-700 dark:text-rose-400">
             {{ __('Hapus Akun') }}
         </h2>
 
-        <p class="mt-1 text-sm text-slate-500">
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {{ __('Setelah akun dihapus, seluruh data akan dihapus secara permanen. Unduh data yang ingin Anda simpan sebelum melanjutkan.') }}
         </p>
     </header>
@@ -42,11 +42,11 @@ new class extends Component
     <x-modal name="confirm-user-deletion" :show="$errors->isNotEmpty()" focusable>
         <form wire:submit="deleteUser" class="p-6">
 
-            <h2 class="text-lg font-semibold text-slate-900">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 {{ __('Yakin ingin menghapus akun Anda?') }}
             </h2>
 
-            <p class="mt-1 text-sm text-slate-500">
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {{ __('Setelah akun dihapus, seluruh data akan dihapus secara permanen. Masukkan password Anda untuk konfirmasi.') }}
             </p>
 

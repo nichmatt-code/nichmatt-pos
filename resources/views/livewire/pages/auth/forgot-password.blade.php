@@ -38,8 +38,8 @@ new #[Layout('layouts.guest')] class extends Component
 
 <div>
     <div class="mb-6">
-        <h1 class="text-xl font-semibold text-slate-900 tracking-tight">{{ __('Lupa password?') }}</h1>
-        <p class="mt-1 text-sm text-slate-500">
+        <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{{ __('Lupa password?') }}</h1>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {{ __('Masukkan email Anda dan kami akan mengirimkan link untuk membuat password baru.') }}
         </p>
     </div>

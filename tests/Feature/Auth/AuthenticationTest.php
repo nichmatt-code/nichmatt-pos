@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Volt\Volt;
@@ -56,7 +57,8 @@ class AuthenticationTest extends TestCase
 
     public function test_navigation_menu_can_be_rendered(): void
     {
-        $user = User::factory()->create();
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $user = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
 
         $this->actingAs($user);
 

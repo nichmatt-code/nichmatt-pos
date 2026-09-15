@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Product;
 use App\Models\Transaction;
+use App\Permission;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -12,7 +13,7 @@ class Dashboard extends Component
 {
     public function mount(): mixed
     {
-        if (Auth::user()->isKasir()) {
+        if (! Auth::user()->hasPermission(Permission::Dashboard)) {
             return redirect()->route('pos');
         }
 

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class Store extends Model
 {
@@ -22,10 +23,18 @@ class Store extends Model
         'address',
         'phone',
         'is_active',
+        'order_token',
         'trial_ends_at',
         'subscription_status',
         'subscription_ends_at',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $store) {
+            $store->order_token ??= Str::random(16);
+        });
+    }
 
     protected function casts(): array
     {
@@ -72,6 +81,30 @@ class Store extends Model
     }
 
     /**
+     * The date access actually runs out: the subscription end date while
+     * actively subscribed, otherwise the trial end date (even if past).
+     */
+    public function accessEndsAt(): ?Carbon
+    {
+        return $this->subscriptionActive() ? $this->subscription_ends_at : $this->trial_ends_at;
+    }
+
+    /**
+     * Days left before access runs out, for either a trial or a paid
+     * subscription - whichever currently applies. 0 once it has expired.
+     */
+    public function accessDaysLeft(): int
+    {
+        $endsAt = $this->accessEndsAt();
+
+        if (! $endsAt || $endsAt->isPast()) {
+            return 0;
+        }
+
+        return (int) now()->diffInDays($endsAt, false) + 1;
+    }
+
+    /**
      * The date a new paid period should start from: extends the current
      * subscription if still active, otherwise starts from now.
      */
@@ -102,5 +135,20 @@ class Store extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function employeeInvitations(): HasMany
+    {
+        return $this->hasMany(EmployeeInvitation::class);
+    }
+
+    public function selfOrders(): HasMany
+    {
+        return $this->hasMany(SelfOrder::class);
+    }
+
+    public function selfOrderUrl(): string
+    {
+        return route('self-order.menu', $this->order_token);
     }
 }

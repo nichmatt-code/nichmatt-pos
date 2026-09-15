@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleAuthController extends Controller
@@ -40,6 +41,12 @@ class GoogleAuthController extends Controller
             ->first();
 
         if ($user) {
+            if (! $user->is_active) {
+                throw ValidationException::withMessages([
+                    'email' => 'Akun ini sudah dinonaktifkan.',
+                ]);
+            }
+
             $user->fill(['google_id' => $googleUser->getId()]);
 
             if (! $user->email_verified_at) {
@@ -73,6 +80,8 @@ class GoogleAuthController extends Controller
         }
 
         Auth::login($user, remember: true);
+
+        $user->rememberAsLinkedAccount();
 
         return redirect()->route('dashboard');
     }

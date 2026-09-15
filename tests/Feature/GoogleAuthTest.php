@@ -79,4 +79,22 @@ class GoogleAuthTest extends TestCase
         $this->assertAuthenticatedAs($existing);
         $this->assertSame(1, User::where('google_id', 'g-555')->count());
     }
+
+    public function test_an_already_logged_in_user_can_add_a_second_account_via_google(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $first = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        $this->actingAs($first);
+        session(['linked_accounts' => [$first->id]]);
+
+        Socialite::fake('google', $this->fakeGoogleUser('g-777', 'Akun Kedua', 'akun.kedua@example.com'));
+
+        $this->get('/auth/google/callback')->assertRedirect(route('dashboard'));
+
+        $second = User::where('email', 'akun.kedua@example.com')->firstOrFail();
+
+        $this->assertAuthenticatedAs($second);
+        $this->assertEqualsCanonicalizing([$first->id, $second->id], session('linked_accounts'));
+    }
 }
