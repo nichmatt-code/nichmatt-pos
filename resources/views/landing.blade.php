@@ -11,16 +11,6 @@
         <!-- Favicon -->
         <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
 
-        <!-- Theme (applied before paint to avoid a flash of the wrong theme) -->
-        <script>
-            (function () {
-                var theme = localStorage.getItem('theme');
-                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                }
-            })();
-        </script>
-
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
@@ -28,10 +18,10 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-slate-900 dark:text-slate-100 antialiased bg-slate-50 dark:bg-slate-950">
+    <body class="font-sans text-slate-900 antialiased bg-slate-50">
 
         <!-- Navbar -->
-        <nav class="sticky top-0 z-40 bg-white/85 dark:bg-slate-900/85 backdrop-blur border-b border-slate-200/70 dark:border-slate-800/70">
+        <nav class="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-slate-200/70">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16 items-center">
                     <a href="/" class="shrink-0 flex items-center gap-2">
@@ -39,19 +29,17 @@
                     </a>
 
                     <div class="hidden sm:flex sm:items-center sm:gap-8">
-                        <a href="#fitur" class="text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition">{{ __('Fitur') }}</a>
-                        <a href="#harga" class="text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition">{{ __('Harga') }}</a>
+                        <a href="#fitur" class="text-sm font-medium text-slate-500 hover:text-slate-900 transition">{{ __('Fitur') }}</a>
+                        <a href="#harga" class="text-sm font-medium text-slate-500 hover:text-slate-900 transition">{{ __('Harga') }}</a>
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <x-theme-toggle />
-
                         @auth
                             <a href="{{ route('dashboard') }}" wire:navigate class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 rounded-lg font-medium text-sm text-white shadow-sm hover:bg-brand-700 transition">
                                 {{ __('Buka Dashboard') }}
                             </a>
                         @else
-                            <a href="{{ route('login') }}" wire:navigate class="hidden sm:inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 transition">
+                            <a href="{{ route('login') }}" wire:navigate class="hidden sm:inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition">
                                 {{ __('Masuk') }}
                             </a>
                             <a href="{{ route('register') }}" wire:navigate class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 rounded-lg font-medium text-sm text-white shadow-sm hover:bg-brand-700 transition">
@@ -66,22 +54,22 @@
         <!-- Hero -->
         <section class="relative overflow-hidden">
             <div class="pointer-events-none absolute inset-0 -z-10">
-                <div class="absolute -top-32 left-1/2 h-96 w-[48rem] -translate-x-1/2 rounded-full bg-brand-200/40 dark:bg-brand-900/30 blur-3xl"></div>
-                <div class="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,theme(colors.slate.300)_1px,transparent_0)] dark:bg-[radial-gradient(circle_at_1px_1px,theme(colors.slate.700)_1px,transparent_0)] [background-size:28px_28px] opacity-[0.15]"></div>
+                <div class="absolute -top-32 left-1/2 h-96 w-[48rem] -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl"></div>
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,theme(colors.slate.300)_1px,transparent_0)] [background-size:28px_28px] opacity-[0.15]"></div>
             </div>
 
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <div class="text-center lg:text-left">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700">
                         {{ __('Coba gratis :days hari, tanpa kartu kredit', ['days' => \App\Models\Store::TRIAL_DAYS]) }}
                     </span>
 
-                    <h1 class="mt-6 text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+                    <h1 class="mt-6 text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
                         {{ __('Kelola Kasir, Stok, dan Karyawan') }}
                         {{ __('Dalam Satu Aplikasi') }}
                     </h1>
 
-                    <p class="mt-5 text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto lg:mx-0">
+                    <p class="mt-5 text-lg text-slate-500 max-w-xl mx-auto lg:mx-0">
                         {{ __('NichmattPOS membantu toko dan resto Anda mengelola transaksi kasir, self-order pelanggan, stok gudang, hingga izin akses karyawan — semua dari satu dashboard yang rapi dan mudah dipakai.') }}
                     </p>
 
@@ -95,18 +83,18 @@
                                 {{ __('Mulai Trial Gratis') }}
                             </a>
                         @endauth
-                        <a href="#fitur" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition w-full sm:w-auto">
+                        <a href="#fitur" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-lg font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition w-full sm:w-auto">
                             {{ __('Lihat Fitur') }}
                         </a>
                     </div>
                 </div>
 
                 <div class="relative">
-                    <div class="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] bg-brand-100/60 dark:bg-brand-500/10"></div>
+                    <div class="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] bg-brand-100/60"></div>
                     <img
                         src="{{ asset('images/landing-cashier.jpg') }}"
                         alt="{{ __('Kasir menggunakan layar sentuh untuk memproses transaksi') }}"
-                        class="w-full aspect-[4/3] object-cover rounded-2xl shadow-soft border border-white/50 dark:border-slate-800"
+                        class="w-full aspect-[4/3] object-cover rounded-2xl shadow-soft border border-white/50"
                     >
                 </div>
             </div>
@@ -115,8 +103,8 @@
         <!-- Features -->
         <section id="fitur" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div class="text-center max-w-2xl mx-auto">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{{ __('Semua yang toko Anda butuhkan') }}</h2>
-                <p class="mt-3 text-slate-500 dark:text-slate-400">{{ __('Dari kasir harian sampai laporan bulanan, satu aplikasi untuk semuanya.') }}</p>
+                <h2 class="text-3xl font-bold text-slate-900 tracking-tight">{{ __('Semua yang toko Anda butuhkan') }}</h2>
+                <p class="mt-3 text-slate-500">{{ __('Dari kasir harian sampai laporan bulanan, satu aplikasi untuk semuanya.') }}</p>
             </div>
 
             <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -134,12 +122,12 @@
                 @endphp
 
                 @foreach ($features as $feature)
-                    <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6">
-                        <span class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
+                    <div class="bg-white border border-slate-200/70 shadow-card rounded-2xl p-6">
+                        <span class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $feature['icon'] }}" /></svg>
                         </span>
-                        <h3 class="mt-4 font-semibold text-slate-900 dark:text-slate-100">{{ __($feature['title']) }}</h3>
-                        <p class="mt-1.5 text-sm text-slate-500 dark:text-slate-400">{{ __($feature['desc']) }}</p>
+                        <h3 class="mt-4 font-semibold text-slate-900">{{ __($feature['title']) }}</h3>
+                        <p class="mt-1.5 text-sm text-slate-500">{{ __($feature['desc']) }}</p>
                     </div>
                 @endforeach
             </div>
@@ -149,25 +137,25 @@
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <div class="relative order-2 lg:order-1">
-                    <div class="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] bg-brand-100/60 dark:bg-brand-500/10"></div>
+                    <div class="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] bg-brand-100/60"></div>
                     <img
                         src="{{ asset('images/landing-stock-opname.jpg') }}"
                         alt="{{ __('Staf melakukan stock opname di gudang dengan clipboard') }}"
-                        class="w-full aspect-[4/3] object-cover rounded-2xl shadow-soft border border-white/50 dark:border-slate-800"
+                        class="w-full aspect-[4/3] object-cover rounded-2xl shadow-soft border border-white/50"
                     >
                 </div>
 
                 <div class="order-1 lg:order-2 text-center lg:text-left">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700">
                         {{ __('Inventory & Stock Opname') }}
                     </span>
-                    <h2 class="mt-4 text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                    <h2 class="mt-4 text-3xl font-bold text-slate-900 tracking-tight">
                         {{ __('Hitung stok fisik tanpa Excel dan tanpa pusing') }}
                     </h2>
-                    <p class="mt-4 text-slate-500 dark:text-slate-400">
+                    <p class="mt-4 text-slate-500">
                         {{ __('Catat stok bahan baku gudang terpisah dari produk jual, lalu mulai sesi stock opname kapan saja. Sistem otomatis mencatat stok saat ini sebagai acuan, staf tinggal isi hasil hitung fisik, dan selisihnya langsung terlihat serta diterapkan begitu sesi diselesaikan.') }}
                     </p>
-                    <ul class="mt-6 space-y-2.5 text-sm text-slate-600 dark:text-slate-300 text-left inline-block">
+                    <ul class="mt-6 space-y-2.5 text-sm text-slate-600 text-left inline-block">
                         @foreach ([
                             'Snapshot stok sistem otomatis saat sesi dimulai',
                             'Hasil hitung tersimpan langsung, tidak hilang meski koneksi putus',
@@ -186,23 +174,23 @@
         <!-- Pricing -->
         <section id="harga" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div class="text-center max-w-xl mx-auto">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{{ __('Satu harga, semua fitur') }}</h2>
-                <p class="mt-3 text-slate-500 dark:text-slate-400">{{ __('Tidak ada paket rumit. Coba dulu gratis, berlangganan kalau sudah cocok.') }}</p>
+                <h2 class="text-3xl font-bold text-slate-900 tracking-tight">{{ __('Satu harga, semua fitur') }}</h2>
+                <p class="mt-3 text-slate-500">{{ __('Tidak ada paket rumit. Coba dulu gratis, berlangganan kalau sudah cocok.') }}</p>
             </div>
 
-            <div class="mt-10 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-soft rounded-2xl p-8 sm:p-10">
+            <div class="mt-10 bg-white border border-slate-200/70 shadow-soft rounded-2xl p-8 sm:p-10">
                 <div class="flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <p class="font-semibold text-slate-900 dark:text-slate-100">{{ __('Langganan Bulanan') }}</p>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('Akses penuh semua fitur, per toko') }}</p>
+                        <p class="font-semibold text-slate-900">{{ __('Langganan Bulanan') }}</p>
+                        <p class="text-sm text-slate-500">{{ __('Akses penuh semua fitur, per toko') }}</p>
                     </div>
-                    <p class="text-4xl font-extrabold text-brand-600 dark:text-brand-400">
+                    <p class="text-4xl font-extrabold text-brand-600">
                         Rp {{ number_format(\App\Models\Store::SUBSCRIPTION_MONTHLY_PRICE, 0, ',', '.') }}
-                        <span class="text-base font-medium text-slate-400 dark:text-slate-500">/{{ __('bulan') }}</span>
+                        <span class="text-base font-medium text-slate-400">/{{ __('bulan') }}</span>
                     </p>
                 </div>
 
-                <ul class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-600 dark:text-slate-300">
+                <ul class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-600">
                     @foreach ([
                         'Kasir & Self-Order tanpa batas transaksi',
                         'Produk, kategori, dan tag tanpa batas',
@@ -228,7 +216,7 @@
                             {{ __('Mulai Trial Gratis :days Hari', ['days' => \App\Models\Store::TRIAL_DAYS]) }}
                         </a>
                     @endauth
-                    <p class="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">{{ __('Tanpa kartu kredit. Batal kapan saja.') }}</p>
+                    <p class="mt-3 text-center text-xs text-slate-400">{{ __('Tanpa kartu kredit. Batal kapan saja.') }}</p>
                 </div>
             </div>
         </section>
@@ -248,12 +236,12 @@
         @endguest
 
         <!-- Footer -->
-        <footer class="border-t border-slate-200/70 dark:border-slate-800/70">
+        <footer class="border-t border-slate-200/70">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <a href="/" class="flex items-center gap-2">
                     <x-application-logo class="h-7 w-auto" />
                 </a>
-                <p class="text-xs text-slate-400 dark:text-slate-500">&copy; {{ now()->year }} {{ config('app.name') }}. {{ __('Semua hak dilindungi.') }}</p>
+                <p class="text-xs text-slate-400">&copy; {{ now()->year }} {{ config('app.name') }}. {{ __('Semua hak dilindungi.') }}</p>
             </div>
         </footer>
     </body>
