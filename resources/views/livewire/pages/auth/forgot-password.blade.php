@@ -37,14 +37,17 @@ new #[Layout('layouts.guest')] class extends Component
 }; ?>
 
 <div>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+    <div class="mb-6">
+        <h1 class="text-xl font-semibold text-slate-900 tracking-tight">{{ __('Lupa password?') }}</h1>
+        <p class="mt-1 text-sm text-slate-500">
+            {{ __('Masukkan email Anda dan kami akan mengirimkan link untuk membuat password baru.') }}
+        </p>
     </div>
 
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form wire:submit="sendPasswordResetLink">
+    <form wire:submit="sendPasswordResetLink" class="space-y-4">
         <!-- Email Address -->
         <div>
             <x-input-label for="email" :value="__('Email')" />
@@ -52,10 +55,8 @@ new #[Layout('layouts.guest')] class extends Component
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
-        </div>
+        <x-primary-button class="w-full justify-center">
+            {{ __('Kirim Link Reset Password') }}
+        </x-primary-button>
     </form>
 </div>

@@ -1,9 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Kasir') }}</h2>
+        <h2 class="font-semibold text-2xl text-slate-900 tracking-tight">{{ __('Kasir') }}</h2>
+        <p class="mt-1 text-sm text-slate-500">{{ __('Buat transaksi baru untuk pelanggan.') }}</p>
     </x-slot>
 
-    <div class="py-12 max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <livewire:pos.terminal />
-    </div>
+    <livewire:pos.terminal />
 </x-app-layout>

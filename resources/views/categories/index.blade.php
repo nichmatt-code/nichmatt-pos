@@ -1,9 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Kategori') }}</h2>
+        <h2 class="font-semibold text-2xl text-slate-900 tracking-tight">{{ __('Kategori') }}</h2>
+        <p class="mt-1 text-sm text-slate-500">{{ __('Kelompokkan produk supaya lebih mudah dikelola.') }}</p>
     </x-slot>
 
-    <div class="py-12 max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <livewire:categories.index />
-    </div>
+    <livewire:categories.index />
 </x-app-layout>
