@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\Store;
+use App\Models\StoreSubscriptionPayment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Store>
+ * @extends Factory<StoreSubscriptionPayment>
  */
-class StoreFactory extends Factory
+class StoreSubscriptionPaymentFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -18,7 +18,7 @@ class StoreFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->company(),
+            //
         ];
     }
 }

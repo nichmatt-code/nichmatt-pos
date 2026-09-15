@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Toko Sembako Jaya',
             'address' => 'Jl. Merdeka No. 1, Jakarta',
             'phone' => '081234567890',
+            'trial_ends_at' => now()->addDays(Store::TRIAL_DAYS),
+            'subscription_status' => 'trial',
         ]);
 
         User::factory()->create([
@@ -60,6 +62,8 @@ class DatabaseSeeder extends Seeder
         $storeTwo = Store::create([
             'name' => 'Toko Elektronik Makmur',
             'address' => 'Jl. Sudirman No. 88, Bandung',
+            'trial_ends_at' => now()->addDays(Store::TRIAL_DAYS),
+            'subscription_status' => 'trial',
         ]);
 
         User::factory()->create([
