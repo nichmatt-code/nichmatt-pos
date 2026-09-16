@@ -203,7 +203,7 @@
 
                     <div class="mt-6 flex justify-end gap-3">
                         <button type="button" wire:click="closeProductModal" wire:loading.attr="disabled" wire:target="confirmAddToCart" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 disabled:opacity-40">{{ __('Batal') }}</button>
-                        <x-primary-button type="button" wire:click="confirmAddToCart(qty)" wire:loading.attr="disabled" wire:target="confirmAddToCart">
+                        <x-primary-button type="button" x-on:click="$wire.confirmAddToCart(qty)" wire:loading.attr="disabled" wire:target="confirmAddToCart">
                             <span wire:loading.remove wire:target="confirmAddToCart">{{ __('Tambahkan') }}</span>
                             <span wire:loading wire:target="confirmAddToCart">{{ __('Menambahkan...') }}</span>
                         </x-primary-button>
