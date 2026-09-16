@@ -168,7 +168,7 @@ new class extends Component
     <!-- Bottom row: navigation menu -->
     <div class="hidden sm:block border-t border-slate-200/70 dark:border-slate-800/70">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-wrap items-center gap-1 py-1.5">
+            <div class="flex flex-wrap items-center justify-center gap-1 py-1.5">
                 @if ($user->hasPermission(\App\Permission::Dashboard))
                         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                             {{ __('Dashboard') }}
