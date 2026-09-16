@@ -27,9 +27,109 @@
         </div>
     </div>
 
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6">
+        <div class="flex items-center justify-between">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ __('Tren Penjualan 14 Hari Terakhir') }}</h3>
+            <span class="text-xs text-slate-400 dark:text-slate-500">{{ __('Total') }}: Rp {{ number_format(collect($salesTrend)->sum('total'), 0, ',', '.') }}</span>
+        </div>
+
+        @php
+            $maxTotal = max(1, collect($salesTrend)->max('total'));
+            $barCount = count($salesTrend);
+            $gap = 4;
+            $barWidth = (700 - ($barCount - 1) * $gap) / $barCount;
+        @endphp
+
+        <div class="mt-4 overflow-x-auto">
+            <svg viewBox="0 0 700 180" class="w-full h-40" preserveAspectRatio="none" role="img" aria-label="{{ __('Grafik penjualan 14 hari terakhir') }}">
+                @foreach ($salesTrend as $i => $day)
+                    @php
+                        $barHeight = $day['total'] > 0 ? max(2, ($day['total'] / $maxTotal) * 150) : 1;
+                        $x = $i * ($barWidth + $gap);
+                        $y = 150 - $barHeight;
+                        $isToday = $day['date']->isToday();
+                    @endphp
+                    <rect x="{{ $x }}" y="{{ $y }}" width="{{ $barWidth }}" height="{{ $barHeight }}" rx="3"
+                        class="{{ $isToday ? 'fill-brand-600 dark:fill-brand-400' : 'fill-brand-200 dark:fill-brand-500/30' }}">
+                        <title>{{ $day['date']->translatedFormat('d M Y') }}: Rp {{ number_format($day['total'], 0, ',', '.') }}</title>
+                    </rect>
+                    <text x="{{ $x + $barWidth / 2 }}" y="170" text-anchor="middle" class="fill-slate-400 dark:fill-slate-500" style="font-size: 9px;">
+                        {{ $day['date']->translatedFormat('d/M') }}
+                    </text>
+                @endforeach
+            </svg>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl">
+            <div class="p-6">
+                <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ __('Pemakaian Inventory Hari Ini') }}</h3>
+
+                @if ($inventoryUsageToday->isEmpty())
+                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ __('Belum ada bahan yang terpakai hari ini.') }}</p>
+                @else
+                    <div class="mt-4 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                                    <th class="pb-3 pr-4">{{ __('Bahan') }}</th>
+                                    <th class="pb-3">{{ __('Terpakai') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                @foreach ($inventoryUsageToday as $usage)
+                                    <tr>
+                                        <td class="py-2.5 pr-4 text-slate-900 dark:text-slate-100">{{ $usage->name }}</td>
+                                        <td class="py-2.5 text-slate-500 dark:text-slate-400">{{ number_format($usage->used, 0, ',', '.') }} {{ $usage->unit }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl">
+            <div class="p-6">
+                <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ __('Inventory Menipis') }}</h3>
+
+                @if ($lowStockInventory->isEmpty())
+                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ __('Tidak ada bahan Inventory dengan stok menipis.') }}</p>
+                @else
+                    <div class="mt-4 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                                    <th class="pb-3 pr-4">{{ __('Bahan') }}</th>
+                                    <th class="pb-3 pr-4">{{ __('Sisa Stok') }}</th>
+                                    <th class="pb-3">{{ __('Min. Stok') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                @foreach ($lowStockInventory as $item)
+                                    <tr>
+                                        <td class="py-2.5 pr-4 text-slate-900 dark:text-slate-100">{{ $item->name }}</td>
+                                        <td class="py-2.5 pr-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                                                {{ $item->stock_qty }} {{ $item->unit }}
+                                            </span>
+                                        </td>
+                                        <td class="py-2.5 text-slate-500 dark:text-slate-400">{{ $item->min_stock }} {{ $item->unit }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl">
         <div class="p-6">
-            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ __('Stok Menipis') }}</h3>
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ __('Stok Produk Menipis') }}</h3>
 
             @if ($lowStockProducts->isEmpty())
                 <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ __('Tidak ada produk dengan stok menipis.') }}</p>
