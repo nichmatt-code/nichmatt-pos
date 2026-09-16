@@ -1,4 +1,4 @@
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div x-data x-on:bill-ready.window="window.open('{{ route('pos.bill') }}', '_blank')" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Product picker -->
     <div class="lg:col-span-2 space-y-4">
         <div class="relative">
@@ -234,8 +234,13 @@
                     </div>
                 @endif
 
+                <x-secondary-button wire:click="printBill" class="w-full justify-center py-2.5">
+                    {{ __('Cetak Bill') }}
+                </x-secondary-button>
+                <p class="text-xs text-slate-400 dark:text-slate-500 text-center -mt-2">{{ __('Tunjukkan ke customer sebelum menerima pembayaran.') }}</p>
+
                 <x-primary-button wire:click="checkout" class="w-full justify-center py-3">
-                    {{ __('Bayar') }}
+                    {{ __('Konfirmasi Pembayaran') }}
                 </x-primary-button>
             </div>
         @endif

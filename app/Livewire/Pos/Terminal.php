@@ -212,6 +212,33 @@ class Terminal extends Component
         }
     }
 
+    /**
+     * Print a non-final bill from the current cart, so the cashier can show
+     * the customer the total before payment is actually taken. Nothing is
+     * saved to the database - the real Transaction is only created once
+     * checkout() runs.
+     */
+    public function printBill(): void
+    {
+        if (empty($this->cart)) {
+            $this->addError('cart', 'Keranjang masih kosong.');
+
+            return;
+        }
+
+        session(['pos_bill' => [
+            'store_id' => Auth::user()->store_id,
+            'customer_name' => $this->customerName !== '' ? $this->customerName : null,
+            'note' => $this->orderNote !== '' ? $this->orderNote : null,
+            'items' => array_values($this->cart),
+            'subtotal' => $this->subtotal,
+            'discount' => (int) $this->discount,
+            'total' => $this->total,
+        ]]);
+
+        $this->dispatch('bill-ready');
+    }
+
     public function newTransaction(): void
     {
         $this->reset(['cart', 'discount', 'paidAmount', 'lastTransactionId', 'customerName', 'orderNote', 'claimedSelfOrderId']);

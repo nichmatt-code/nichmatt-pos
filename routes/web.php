@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\MidtransNotificationController;
+use App\Http\Controllers\PosBillController;
 use App\Http\Controllers\ProductLabelController;
 use App\Http\Controllers\TransactionReceiptController;
 use App\Models\StockOpname;
@@ -27,6 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::view('dashboard', 'dashboard')->name('dashboard');
 
         Route::view('pos', 'pos')->name('pos');
+        Route::get('pos/bill', PosBillController::class)->name('pos.bill');
         Route::get('transactions/{transaction}/receipt', TransactionReceiptController::class)
             ->name('transactions.receipt');
 

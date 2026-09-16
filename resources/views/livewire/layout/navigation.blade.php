@@ -79,8 +79,8 @@ new class extends Component
                 <!-- Navigation Links -->
                 @php
                     $user = auth()->user();
-                    $inOperational = request()->routeIs('pos') || request()->routeIs('preparation.index');
-                    $inAdministration = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('inventory.index') || request()->routeIs('stock-opname.*') || request()->routeIs('team.index') || request()->routeIs('branch.settings');
+                    $inOperational = request()->routeIs('pos') || request()->routeIs('preparation.index') || request()->routeIs('stock-opname.*');
+                    $inAdministration = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('inventory.index') || request()->routeIs('team.index') || request()->routeIs('branch.settings');
                     $hasAdministration = $user->hasPermission(\App\Permission::Products)
                         || $user->hasPermission(\App\Permission::Categories)
                         || $user->hasPermission(\App\Permission::Inventory)
@@ -104,6 +104,11 @@ new class extends Component
                                 {{ __('Persiapan') }}
                             </x-dropdown-link>
                         @endif
+                        @if ($user->hasPermission(\App\Permission::StockOpname))
+                            <x-dropdown-link :href="route('stock-opname.index')" wire:navigate>
+                                {{ __('Stock Opname') }}
+                            </x-dropdown-link>
+                        @endif
                     </x-nav-dropdown>
 
                     @if ($hasAdministration)
@@ -121,11 +126,6 @@ new class extends Component
                             @if ($user->hasPermission(\App\Permission::Inventory))
                                 <x-dropdown-link :href="route('inventory.index')" wire:navigate>
                                     {{ __('Inventory') }}
-                                </x-dropdown-link>
-                            @endif
-                            @if ($user->hasPermission(\App\Permission::StockOpname))
-                                <x-dropdown-link :href="route('stock-opname.index')" wire:navigate>
-                                    {{ __('Stock Opname') }}
                                 </x-dropdown-link>
                             @endif
                             @if ($user->hasPermission(\App\Permission::Employees))
@@ -273,6 +273,11 @@ new class extends Component
                     {{ __('Persiapan') }}
                 </x-responsive-nav-link>
             @endif
+            @if ($user->hasPermission(\App\Permission::StockOpname))
+                <x-responsive-nav-link :href="route('stock-opname.index')" :active="request()->routeIs('stock-opname.*')" wire:navigate>
+                    {{ __('Stock Opname') }}
+                </x-responsive-nav-link>
+            @endif
 
             @if ($hasAdministration)
                 <p class="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('Administrasi') }}</p>
@@ -289,11 +294,6 @@ new class extends Component
                 @if ($user->hasPermission(\App\Permission::Inventory))
                     <x-responsive-nav-link :href="route('inventory.index')" :active="request()->routeIs('inventory.index')" wire:navigate>
                         {{ __('Inventory') }}
-                    </x-responsive-nav-link>
-                @endif
-                @if ($user->hasPermission(\App\Permission::StockOpname))
-                    <x-responsive-nav-link :href="route('stock-opname.index')" :active="request()->routeIs('stock-opname.*')" wire:navigate>
-                        {{ __('Stock Opname') }}
                     </x-responsive-nav-link>
                 @endif
                 @if ($user->hasPermission(\App\Permission::Employees))

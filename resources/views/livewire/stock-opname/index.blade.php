@@ -70,11 +70,11 @@
                     <x-input-label value="Hitung Stok Untuk" />
                     <div class="mt-1.5 grid grid-cols-2 gap-2">
                         <label class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-sm font-medium transition {{ $type === 'product' ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-brand-500/10 dark:border-brand-700 dark:text-brand-300' : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400' }}">
-                            <input type="radio" wire:model="type" value="product" class="sr-only">
+                            <input type="radio" wire:model.live="type" value="product" class="sr-only">
                             {{ __('Produk') }}
                         </label>
                         <label class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-sm font-medium transition {{ $type === 'inventory' ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-brand-500/10 dark:border-brand-700 dark:text-brand-300' : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400' }}">
-                            <input type="radio" wire:model="type" value="inventory" class="sr-only">
+                            <input type="radio" wire:model.live="type" value="inventory" class="sr-only">
                             {{ __('Inventory') }}
                         </label>
                     </div>
