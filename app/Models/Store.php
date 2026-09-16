@@ -16,10 +16,15 @@ class Store extends Model
 
     public const TRIAL_DAYS = 30;
 
+    public const RECEIPT_FORMAT_THERMAL = 'thermal';
+
+    public const RECEIPT_FORMAT_PDF = 'pdf';
+
     protected $fillable = [
         'name',
         'address',
         'phone',
+        'receipt_format',
         'is_active',
         'order_token',
         'trial_ends_at',
@@ -158,5 +163,10 @@ class Store extends Model
     public function selfOrderUrl(): string
     {
         return route('self-order.menu', $this->order_token);
+    }
+
+    public function usesPdfReceipt(): bool
+    {
+        return $this->receipt_format === self::RECEIPT_FORMAT_PDF;
     }
 }

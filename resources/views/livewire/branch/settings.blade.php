@@ -64,6 +64,39 @@
         </form>
     </div>
 
+    <div class="mt-6 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Format Struk') }}</h3>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Pilih tata letak struk saat tombol "Cetak Struk" ditekan di kasir maupun laporan.') }}</p>
+
+        <form wire:submit="saveReceiptFormat" class="mt-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition {{ $receiptFormat === 'thermal' ? 'border-brand-400 bg-brand-50/60 dark:border-brand-600 dark:bg-brand-500/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-600' }}">
+                    <input type="radio" wire:model="receiptFormat" value="thermal" class="mt-1 text-brand-600 focus:ring-brand-500">
+                    <span>
+                        <span class="block font-medium text-slate-900 dark:text-slate-100">{{ __('Printer Thermal') }}</span>
+                        <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('Ukuran kertas kecil (80mm), cocok untuk printer thermal via USB/Bluetooth.') }}</span>
+                    </span>
+                </label>
+
+                <label class="flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition {{ $receiptFormat === 'pdf' ? 'border-brand-400 bg-brand-50/60 dark:border-brand-600 dark:bg-brand-500/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-600' }}">
+                    <input type="radio" wire:model="receiptFormat" value="pdf" class="mt-1 text-brand-600 focus:ring-brand-500">
+                    <span>
+                        <span class="block font-medium text-slate-900 dark:text-slate-100">{{ __('Invoice / PDF') }}</span>
+                        <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('Tata letak ukuran kertas biasa, cocok untuk disimpan sebagai PDF atau dicetak dari HP.') }}</span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="flex items-center gap-4 pt-4">
+                <x-primary-button>{{ __('Simpan') }}</x-primary-button>
+
+                <x-action-message class="me-3" on="receipt-format-updated">
+                    {{ __('Tersimpan.') }}
+                </x-action-message>
+            </div>
+        </form>
+    </div>
+
     <div class="mt-6 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8" x-data>
         <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Link Self Order') }}</h3>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Bagikan link ini ke pelanggan (misalnya lewat kode QR di meja) agar mereka bisa pesan sendiri.') }}</p>

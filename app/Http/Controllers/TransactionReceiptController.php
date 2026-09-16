@@ -11,6 +11,8 @@ class TransactionReceiptController extends Controller
     {
         $transaction->load(['items', 'user', 'store']);
 
-        return view('transactions.receipt', ['transaction' => $transaction]);
+        $view = $transaction->store->usesPdfReceipt() ? 'transactions.receipt-pdf' : 'transactions.receipt';
+
+        return view($view, ['transaction' => $transaction]);
     }
 }

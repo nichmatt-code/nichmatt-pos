@@ -67,24 +67,26 @@
                             <th class="pb-2 pr-4">{{ __('No. Transaksi') }}</th>
                             <th class="pb-2 pr-4">{{ __('Customer') }}</th>
                             <th class="pb-2 pr-4">{{ __('Waktu') }}</th>
-                            <th class="pb-2">{{ __('Total') }}</th>
+                            <th class="pb-2 pr-4">{{ __('Total') }}</th>
+                            <th class="pb-2"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                         @forelse ($transactions as $transaction)
                             <tr>
-                                <td class="py-2.5 pr-4">
-                                    <a href="{{ route('transactions.receipt', $transaction) }}" target="_blank" class="text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium">
-                                        {{ $transaction->transaction_no }}
-                                    </a>
-                                </td>
+                                <td class="py-2.5 pr-4 text-slate-900 dark:text-slate-100 font-medium">{{ $transaction->transaction_no }}</td>
                                 <td class="py-2.5 pr-4 text-slate-500 dark:text-slate-400">{{ $transaction->customer_name ?? '-' }}</td>
                                 <td class="py-2.5 pr-4 text-slate-500 dark:text-slate-400">{{ $transaction->created_at->format('d/m/Y H:i') }}</td>
-                                <td class="py-2.5 text-slate-900 dark:text-slate-100">Rp {{ number_format($transaction->total, 0, ',', '.') }}</td>
+                                <td class="py-2.5 pr-4 text-slate-900 dark:text-slate-100">Rp {{ number_format($transaction->total, 0, ',', '.') }}</td>
+                                <td class="py-2.5 text-right whitespace-nowrap">
+                                    <a href="{{ route('transactions.receipt', $transaction) }}" target="_blank" class="text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium">
+                                        {{ __('Cetak Struk') }}
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada transaksi.') }}</td>
+                                <td colspan="5" class="py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada transaksi.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>
