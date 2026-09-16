@@ -67,30 +67,109 @@ new class extends Component
 }; ?>
 
 <nav x-data="{ open: false }" class="sticky top-0 z-40 bg-white/85 dark:bg-slate-900/85 backdrop-blur border-b border-slate-200/70 dark:border-slate-800/70">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-wrap items-center justify-between min-h-16 py-2 gap-x-4 gap-y-1.5">
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 lg:gap-x-6 min-w-0">
-                <!-- Logo -->
-                <a href="{{ route('pos') }}" wire:navigate class="shrink-0 flex items-center">
-                    <x-application-logo class="block h-8 w-auto" />
-                </a>
+    @php
+        $user = auth()->user();
+        $inOperational = request()->routeIs('pos') || request()->routeIs('preparation.index') || request()->routeIs('stock-opname.*');
+        $inProduct = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('tags.index') || request()->routeIs('inventory.index');
+        $inAdministration = request()->routeIs('team.index') || request()->routeIs('branch.settings') || request()->routeIs('customers.index');
+        $hasProduct = $user->hasPermission(\App\Permission::Products)
+            || $user->hasPermission(\App\Permission::Categories)
+            || $user->hasPermission(\App\Permission::Inventory);
+        $hasAdministration = $user->hasPermission(\App\Permission::Employees)
+            || $user->hasPermission(\App\Permission::StoreSettings)
+            || $user->hasPermission(\App\Permission::Customers);
+    @endphp
 
-                <!-- Navigation Links -->
-                @php
-                    $user = auth()->user();
-                    $inOperational = request()->routeIs('pos') || request()->routeIs('preparation.index') || request()->routeIs('stock-opname.*');
-                    $inProduct = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('tags.index') || request()->routeIs('inventory.index');
-                    $inAdministration = request()->routeIs('team.index') || request()->routeIs('branch.settings') || request()->routeIs('customers.index');
-                    $hasProduct = $user->hasPermission(\App\Permission::Products)
-                        || $user->hasPermission(\App\Permission::Categories)
-                        || $user->hasPermission(\App\Permission::Inventory);
-                    $hasAdministration = $user->hasPermission(\App\Permission::Employees)
-                        || $user->hasPermission(\App\Permission::StoreSettings)
-                        || $user->hasPermission(\App\Permission::Customers);
-                @endphp
-                <div class="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-1">
-                    @if ($user->hasPermission(\App\Permission::Dashboard))
+    <!-- Top row: logo, store name, and account -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-14">
+            <!-- Logo -->
+            <a href="{{ route('pos') }}" wire:navigate class="shrink-0 flex items-center">
+                <x-application-logo class="block h-8 w-auto" />
+            </a>
+
+            <!-- Settings -->
+            <div class="hidden sm:flex sm:items-center sm:gap-2">
+                <span class="text-sm text-slate-400 dark:text-slate-500 mr-2 truncate max-w-[220px]" title="{{ auth()->user()->store?->name }}">{{ auth()->user()->store?->name }}</span>
+
+                <x-fullscreen-toggle />
+                <x-theme-toggle />
+
+                <x-dropdown align="right" width="52">
+                    <x-slot name="trigger">
+                        <button class="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition focus:outline-none">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">
+                                {{ Str::of(auth()->user()->name)->substr(0, 1)->upper() }}
+                            </span>
+                            <span class="text-sm font-medium text-slate-700 dark:text-slate-300" x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name" x-on:profile-updated.window="name = $event.detail.name"></span>
+                            <svg class="h-4 w-4 text-slate-400 dark:text-slate-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </x-slot>
+
+                    <x-slot name="content">
+                        <x-dropdown-link :href="route('profile')" wire:navigate>
+                            {{ __('Profil') }}
+                        </x-dropdown-link>
+
+                        @php $linkedAccounts = \App\Models\User::linkedAccounts()->where('id', '!=', auth()->id()); @endphp
+                        @if ($linkedAccounts->isNotEmpty())
+                            <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
+                            <p class="px-4 pt-1 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('Ganti Akun') }}</p>
+                            @foreach ($linkedAccounts as $account)
+                                <button type="button" wire:click="switchToAccount({{ $account->id }})" class="w-full flex items-center gap-2 px-4 py-2 text-start text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                                        {{ Str::of($account->name)->substr(0, 1)->upper() }}
+                                    </span>
+                                    <span class="truncate">
+                                        <span class="block truncate">{{ $account->name }}</span>
+                                        <span class="block truncate text-xs text-slate-400 dark:text-slate-500">{{ $account->email }}</span>
+                                    </span>
+                                </button>
+                            @endforeach
+                        @endif
+
+                        <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
+
+                        <div class="flex items-center justify-between gap-2 px-4 py-2">
+                            <x-dropdown-link :href="route('accounts.add')" wire:navigate class="!px-0 !py-0">
+                                {{ __('+ Tambah Akun Lain') }}
+                            </x-dropdown-link>
+                            <a href="{{ route('auth.google.redirect') }}" title="{{ __('Tambah akun dengan Google') }}" class="shrink-0 rounded-md p-1 hover:bg-slate-100 dark:hover:bg-slate-700">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.82Z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3a7.4 7.4 0 0 1-11-3.9H.98v3.09A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.07 14.19a7.2 7.2 0 0 1 0-4.38V6.72H.98a12 12 0 0 0 0 10.56l4.09-3.09Z"/><path fill="#EA4335" d="M12 4.77c1.76 0 3.35.6 4.6 1.79l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 .98 6.72l4.09 3.09A7.16 7.16 0 0 1 12 4.77Z"/></svg>
+                            </a>
+                        </div>
+
+                        <!-- Authentication -->
+                        <button wire:click="logout" class="w-full text-start">
+                            <x-dropdown-link>
+                                {{ __('Keluar') }}
+                            </x-dropdown-link>
+                        </button>
+                    </x-slot>
+                </x-dropdown>
+            </div>
+
+            <!-- Hamburger -->
+            <div class="-me-2 flex items-center gap-1 sm:hidden">
+                <x-fullscreen-toggle />
+                <x-theme-toggle />
+                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-800 focus:outline-none transition duration-150 ease-in-out">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom row: navigation menu -->
+    <div class="hidden sm:block border-t border-slate-200/70 dark:border-slate-800/70">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap items-center gap-1 py-1.5">
+                @if ($user->hasPermission(\App\Permission::Dashboard))
                         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                             {{ __('Dashboard') }}
                         </x-nav-link>
@@ -191,82 +270,6 @@ new class extends Component
                             </x-slot>
                         </x-dropdown>
                     @endif
-                </div>
-            </div>
-
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:gap-2 shrink-0">
-                <span class="hidden lg:inline-block text-sm text-slate-400 dark:text-slate-500 mr-2 truncate max-w-[140px]" title="{{ auth()->user()->store?->name }}">{{ auth()->user()->store?->name }}</span>
-
-                <x-fullscreen-toggle />
-                <x-theme-toggle />
-
-                <x-dropdown align="right" width="52">
-                    <x-slot name="trigger">
-                        <button class="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition focus:outline-none">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">
-                                {{ Str::of(auth()->user()->name)->substr(0, 1)->upper() }}
-                            </span>
-                            <span class="text-sm font-medium text-slate-700 dark:text-slate-300" x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name" x-on:profile-updated.window="name = $event.detail.name"></span>
-                            <svg class="h-4 w-4 text-slate-400 dark:text-slate-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile')" wire:navigate>
-                            {{ __('Profil') }}
-                        </x-dropdown-link>
-
-                        @php $linkedAccounts = \App\Models\User::linkedAccounts()->where('id', '!=', auth()->id()); @endphp
-                        @if ($linkedAccounts->isNotEmpty())
-                            <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
-                            <p class="px-4 pt-1 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('Ganti Akun') }}</p>
-                            @foreach ($linkedAccounts as $account)
-                                <button type="button" wire:click="switchToAccount({{ $account->id }})" class="w-full flex items-center gap-2 px-4 py-2 text-start text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
-                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
-                                        {{ Str::of($account->name)->substr(0, 1)->upper() }}
-                                    </span>
-                                    <span class="truncate">
-                                        <span class="block truncate">{{ $account->name }}</span>
-                                        <span class="block truncate text-xs text-slate-400 dark:text-slate-500">{{ $account->email }}</span>
-                                    </span>
-                                </button>
-                            @endforeach
-                        @endif
-
-                        <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
-
-                        <div class="flex items-center justify-between gap-2 px-4 py-2">
-                            <x-dropdown-link :href="route('accounts.add')" wire:navigate class="!px-0 !py-0">
-                                {{ __('+ Tambah Akun Lain') }}
-                            </x-dropdown-link>
-                            <a href="{{ route('auth.google.redirect') }}" title="{{ __('Tambah akun dengan Google') }}" class="shrink-0 rounded-md p-1 hover:bg-slate-100 dark:hover:bg-slate-700">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.82Z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3a7.4 7.4 0 0 1-11-3.9H.98v3.09A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.07 14.19a7.2 7.2 0 0 1 0-4.38V6.72H.98a12 12 0 0 0 0 10.56l4.09-3.09Z"/><path fill="#EA4335" d="M12 4.77c1.76 0 3.35.6 4.6 1.79l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 .98 6.72l4.09 3.09A7.16 7.16 0 0 1 12 4.77Z"/></svg>
-                            </a>
-                        </div>
-
-                        <!-- Authentication -->
-                        <button wire:click="logout" class="w-full text-start">
-                            <x-dropdown-link>
-                                {{ __('Keluar') }}
-                            </x-dropdown-link>
-                        </button>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center gap-1 sm:hidden">
-                <x-fullscreen-toggle />
-                <x-theme-toggle />
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-800 focus:outline-none transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
             </div>
         </div>
     </div>
