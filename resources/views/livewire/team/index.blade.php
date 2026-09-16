@@ -111,8 +111,8 @@
     <!-- Invite Modal -->
     @if ($showInviteModal)
     <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
-        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showInviteModal', false)"></div>
-        <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
+        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showInviteModal', false)" wire:transition.opacity></div>
+        <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
             <div class="p-6">
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Undang Karyawan') }}</h3>
 
@@ -148,7 +148,10 @@
 
                     <div class="flex justify-end gap-3 pt-2">
                         <button type="button" wire:click="$set('showInviteModal', false)" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{{ __('Batal') }}</button>
-                        <x-primary-button type="submit">{{ __('Kirim Undangan') }}</x-primary-button>
+                        <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="sendInvite">
+                            <span wire:loading.remove wire:target="sendInvite">{{ __('Kirim Undangan') }}</span>
+                            <span wire:loading wire:target="sendInvite">{{ __('Mengirim...') }}</span>
+                        </x-primary-button>
                     </div>
                 </form>
             </div>
@@ -159,8 +162,8 @@
     <!-- Edit Employee Modal -->
     @if ($showEditModal)
     <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
-        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showEditModal', false)"></div>
-        <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
+        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showEditModal', false)" wire:transition.opacity></div>
+        <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
             <div class="p-6">
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Detail Karyawan') }}</h3>
 
@@ -202,7 +205,10 @@
 
                         <div class="flex gap-3">
                             <button type="button" wire:click="$set('showEditModal', false)" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{{ __('Tutup') }}</button>
-                            <x-primary-button type="submit">{{ __('Simpan') }}</x-primary-button>
+                            <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="saveEdit">
+                                <span wire:loading.remove wire:target="saveEdit">{{ __('Simpan') }}</span>
+                                <span wire:loading wire:target="saveEdit">{{ __('Menyimpan...') }}</span>
+                            </x-primary-button>
                         </div>
                     </div>
                 </form>

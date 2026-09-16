@@ -1,7 +1,11 @@
 <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="relative w-full sm:w-72">
-            <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg wire:loading.remove wire:target="search" class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg wire:loading wire:target="search" class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-500 dark:text-brand-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
             <x-text-input wire:model.live.debounce.300ms="search" type="text" class="w-full pl-10" placeholder="Cari nama atau nomor HP..." />
         </div>
         <x-primary-button wire:click="createCustomer">
@@ -51,8 +55,8 @@
     <!-- Customer Form Modal -->
     @if ($showFormModal)
     <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
-        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showFormModal', false)"></div>
-        <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
+        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showFormModal', false)" wire:transition.opacity></div>
+        <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
         <div class="p-6">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $editingId ? __('Edit Pelanggan') : __('Tambah Pelanggan') }}</h3>
 
@@ -83,7 +87,10 @@
 
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" wire:click="$set('showFormModal', false)" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{{ __('Batal') }}</button>
-                    <x-primary-button type="submit">{{ $editingId ? __('Update') : __('Tambah') }}</x-primary-button>
+                    <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="save">
+                        <span wire:loading.remove wire:target="save">{{ $editingId ? __('Update') : __('Tambah') }}</span>
+                        <span wire:loading wire:target="save">{{ __('Menyimpan...') }}</span>
+                    </x-primary-button>
                 </div>
             </form>
         </div>

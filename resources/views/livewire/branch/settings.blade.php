@@ -55,7 +55,10 @@
             </div>
 
             <div class="flex items-center gap-4 pt-2">
-                <x-primary-button>{{ __('Simpan') }}</x-primary-button>
+                <x-primary-button wire:loading.attr="disabled" wire:target="save">
+                    <span wire:loading.remove wire:target="save">{{ __('Simpan') }}</span>
+                    <span wire:loading wire:target="save">{{ __('Menyimpan...') }}</span>
+                </x-primary-button>
 
                 <x-action-message class="me-3" on="branch-updated">
                     {{ __('Tersimpan.') }}
@@ -91,7 +94,10 @@
             <x-input-error :messages="$errors->get('logo')" class="mt-2" />
 
             <div class="flex items-center gap-4">
-                <x-primary-button type="submit">{{ __('Simpan Logo') }}</x-primary-button>
+                <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="saveLogo,logo">
+                    <span wire:loading.remove wire:target="saveLogo">{{ __('Simpan Logo') }}</span>
+                    <span wire:loading wire:target="saveLogo">{{ __('Menyimpan...') }}</span>
+                </x-primary-button>
 
                 <x-action-message class="me-3" on="logo-updated">
                     {{ __('Tersimpan.') }}
@@ -124,7 +130,10 @@
             </div>
 
             <div class="flex items-center gap-4 pt-4">
-                <x-primary-button>{{ __('Simpan') }}</x-primary-button>
+                <x-primary-button wire:loading.attr="disabled" wire:target="saveReceiptFormat">
+                    <span wire:loading.remove wire:target="saveReceiptFormat">{{ __('Simpan') }}</span>
+                    <span wire:loading wire:target="saveReceiptFormat">{{ __('Menyimpan...') }}</span>
+                </x-primary-button>
 
                 <x-action-message class="me-3" on="receipt-format-updated">
                     {{ __('Tersimpan.') }}
@@ -170,7 +179,10 @@
             </div>
 
             <div class="flex items-center gap-4 pt-2">
-                <x-primary-button>{{ __('Simpan') }}</x-primary-button>
+                <x-primary-button wire:loading.attr="disabled" wire:target="savePosSettings">
+                    <span wire:loading.remove wire:target="savePosSettings">{{ __('Simpan') }}</span>
+                    <span wire:loading wire:target="savePosSettings">{{ __('Menyimpan...') }}</span>
+                </x-primary-button>
 
                 <x-action-message class="me-3" on="pos-settings-updated">
                     {{ __('Tersimpan.') }}

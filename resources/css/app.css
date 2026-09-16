@@ -5,3 +5,12 @@
 [x-cloak] {
     display: none !important;
 }
+
+/* Livewire's top-of-page loading bar, recolored to match the brand. */
+#nprogress .bar {
+    background: #2a4ce0 !important;
+}
+
+#nprogress .peg {
+    box-shadow: 0 0 10px #2a4ce0, 0 0 5px #2a4ce0 !important;
+}

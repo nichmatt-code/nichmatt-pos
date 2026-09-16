@@ -8,7 +8,10 @@
                 <x-text-input wire:model="email" type="email" class="block w-full" placeholder="email@contoh.com" />
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
             </div>
-            <x-primary-button type="submit">{{ __('Beri Akses') }}</x-primary-button>
+            <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="grant">
+                <span wire:loading.remove wire:target="grant">{{ __('Beri Akses') }}</span>
+                <span wire:loading wire:target="grant">{{ __('Memproses...') }}</span>
+            </x-primary-button>
         </form>
     </div>
 

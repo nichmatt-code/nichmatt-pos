@@ -1,6 +1,6 @@
 <div>
     @if ($confirmedCode)
-        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-card border border-slate-200/70 dark:border-slate-800 p-8 text-center max-w-md mx-auto">
+        <div wire:transition class="bg-white dark:bg-slate-900 rounded-2xl shadow-card border border-slate-200/70 dark:border-slate-800 p-8 text-center max-w-md mx-auto">
             <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
             </span>
@@ -25,7 +25,11 @@
             <!-- Product picker -->
             <div class="lg:col-span-2 space-y-4">
                 <div class="relative">
-                    <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <svg wire:loading.remove wire:target="search" class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <svg wire:loading wire:target="search" class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-500 dark:text-brand-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
                     <x-text-input wire:model.live.debounce.300ms="search" type="text" class="w-full pl-10" placeholder="Cari menu..." />
                 </div>
 
@@ -68,6 +72,7 @@
                     <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p>
                 @enderror
 
+                <div wire:loading.class="opacity-40" wire:target="search,selectCategory,toggleTag" class="transition-opacity duration-150">
                 @if ($productGroups)
                     <div class="space-y-5">
                         @foreach ($categories as $category)
@@ -109,6 +114,7 @@
                         @endforelse
                     </div>
                 @endif
+                </div>
             </div>
 
             <!-- Cart -->
@@ -128,7 +134,7 @@
 
                 <div class="flex-1 space-y-2 max-h-96 overflow-y-auto">
                     @forelse ($cart as $productId => $item)
-                        <div wire:key="cart-{{ $productId }}" class="border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <div wire:key="cart-{{ $productId }}" wire:transition class="border-b border-slate-100 dark:border-slate-800 pb-2.5">
                             <div class="flex items-center justify-between text-sm">
                                 <div class="flex-1 pr-2">
                                     <div class="text-slate-900 dark:text-slate-100">{{ $item['name'] }}</div>
@@ -177,8 +183,8 @@
     @if ($viewingProductId && $this->viewingProduct)
         @php $viewingProduct = $this->viewingProduct; @endphp
         <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
-            <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal"></div>
-            <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
+            <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal" wire:transition.opacity></div>
+            <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
                 <x-product-thumb :product="$viewingProduct" class="h-40 w-full rounded-none" />
 
                 <div class="p-6">

@@ -8,7 +8,10 @@
                 <x-input-error :messages="$errors->get('name')" class="mt-2" />
             </div>
 
-            <x-primary-button type="submit">{{ $editingId ? __('Update') : __('Tambah') }}</x-primary-button>
+            <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="save">
+                <span wire:loading.remove wire:target="save">{{ $editingId ? __('Update') : __('Tambah') }}</span>
+                <span wire:loading wire:target="save">{{ __('Menyimpan...') }}</span>
+            </x-primary-button>
 
             @if ($editingId)
                 <button type="button" wire:click="cancelEdit" class="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 mt-2.5">{{ __('Batal') }}</button>

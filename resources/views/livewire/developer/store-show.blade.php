@@ -54,7 +54,10 @@
                     <x-text-input wire:model="extendDays" id="extendDays" type="number" min="1" class="block w-full mt-1" placeholder="mis. 30" />
                     <x-input-error :messages="$errors->get('extendDays')" class="mt-1" />
                 </div>
-                <x-secondary-button type="submit" class="shrink-0">{{ __('Tambah') }}</x-secondary-button>
+                <x-secondary-button type="submit" wire:loading.attr="disabled" wire:target="extend" class="shrink-0">
+                    <span wire:loading.remove wire:target="extend">{{ __('Tambah') }}</span>
+                    <span wire:loading wire:target="extend">{{ __('Memproses...') }}</span>
+                </x-secondary-button>
             </form>
 
             <form wire:submit="setExpiry" class="flex items-end gap-2">
@@ -63,7 +66,10 @@
                     <input wire:model="customExpiryDate" id="customExpiryDate" type="date" class="block w-full mt-1 border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100" />
                     <x-input-error :messages="$errors->get('customExpiryDate')" class="mt-1" />
                 </div>
-                <x-secondary-button type="submit" class="shrink-0">{{ __('Set') }}</x-secondary-button>
+                <x-secondary-button type="submit" wire:loading.attr="disabled" wire:target="setExpiry" class="shrink-0">
+                    <span wire:loading.remove wire:target="setExpiry">{{ __('Set') }}</span>
+                    <span wire:loading wire:target="setExpiry">{{ __('Memproses...') }}</span>
+                </x-secondary-button>
             </form>
         </div>
     </div>

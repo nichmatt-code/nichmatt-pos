@@ -121,8 +121,8 @@
     <!-- Plan Form Modal -->
     @if ($showPlanModal)
     <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
-        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showPlanModal', false)"></div>
-        <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-lg sm:mx-auto">
+        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showPlanModal', false)" wire:transition.opacity></div>
+        <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-lg sm:mx-auto">
         <div class="p-6">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $editingPlanId ? __('Edit Paket') : __('Tambah Paket') }}</h3>
 
@@ -196,7 +196,10 @@
 
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" wire:click="$set('showPlanModal', false)" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{{ __('Batal') }}</button>
-                    <x-primary-button type="submit">{{ __('Simpan') }}</x-primary-button>
+                    <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="savePlan">
+                        <span wire:loading.remove wire:target="savePlan">{{ __('Simpan') }}</span>
+                        <span wire:loading wire:target="savePlan">{{ __('Menyimpan...') }}</span>
+                    </x-primary-button>
                 </div>
             </form>
         </div>
@@ -207,8 +210,8 @@
     <!-- Promo Form Modal -->
     @if ($showPromoModal)
     <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
-        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showPromoModal', false)"></div>
-        <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-lg sm:mx-auto">
+        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showPromoModal', false)" wire:transition.opacity></div>
+        <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-lg sm:mx-auto">
         <div class="p-6">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $editingPromoId ? __('Edit Kode Promo') : __('Tambah Kode Promo') }}</h3>
 
@@ -254,7 +257,10 @@
 
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" wire:click="$set('showPromoModal', false)" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{{ __('Batal') }}</button>
-                    <x-primary-button type="submit">{{ __('Simpan') }}</x-primary-button>
+                    <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="savePromo">
+                        <span wire:loading.remove wire:target="savePromo">{{ __('Simpan') }}</span>
+                        <span wire:loading wire:target="savePromo">{{ __('Menyimpan...') }}</span>
+                    </x-primary-button>
                 </div>
             </form>
         </div>
