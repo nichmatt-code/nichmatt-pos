@@ -355,6 +355,21 @@
                     <span wire:loading.remove wire:target="checkout">{{ __('Konfirmasi Pembayaran') }}</span>
                     <span wire:loading wire:target="checkout">{{ __('Memproses...') }}</span>
                 </x-primary-button>
+
+                @if ($this->store->canAcceptOnlinePayments())
+                    <button type="button" wire:click="payWithQrisOnline" wire:loading.attr="disabled"
+                        wire:target="payWithQrisOnline"
+                        class="w-full inline-flex justify-center items-center gap-1.5 px-4 py-2.5 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg font-medium text-sm transition disabled:opacity-50">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3.75 4.5A.75.75 0 014.5 3.75h4.5a.75.75 0 01.75.75v4.5a.75.75 0 01-.75.75h-4.5a.75.75 0 01-.75-.75v-4.5zM3.75 15a.75.75 0 01.75-.75h4.5a.75.75 0 01.75.75v4.5a.75.75 0 01-.75.75h-4.5A.75.75 0 013.75 19.5V15zM14.25 4.5a.75.75 0 01.75-.75h4.5a.75.75 0 01.75.75v4.5a.75.75 0 01-.75.75h-4.5a.75.75 0 01-.75-.75v-4.5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6.75h1.5v1.5H6v-1.5zM6 17.25h1.5v1.5H6v-1.5zM16.5 6.75H18v1.5h-1.5v-1.5zM14.25 14.25h2.25v2.25M14.25 19.5h2.25M19.5 14.25v2.25M19.5 19.5v.01M17.25 17.25h.01M14.25 17.25h.01" />
+                        </svg>
+                        <span wire:loading.remove wire:target="payWithQrisOnline">{{ __('Bayar QRIS Online') }}</span>
+                        <span wire:loading wire:target="payWithQrisOnline">{{ __('Membuat QR...') }}</span>
+                    </button>
+                    <x-input-error :messages="$errors->get('qrisPayment')" class="-mt-2" />
+                @endif
             </div>
         @endif
     </div>
@@ -404,6 +419,59 @@
                             <span wire:loading wire:target="confirmAddToCart">{{ __('Menambahkan...') }}</span>
                         </x-primary-button>
                     </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- QRIS Online Payment Modal -->
+    @if ($qrisPaymentId && $this->qrisPayment)
+        @php $qrisPayment = $this->qrisPayment; @endphp
+        <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6"
+            @if ($qrisPayment->isPending()) wire:poll.3s="checkQrisPaymentStatus" @endif>
+            <div class="fixed inset-0 bg-slate-900/60"></div>
+            <div
+                class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
+                <div class="p-6 text-center">
+                    @if ($qrisPayment->isPending())
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                            {{ __('Scan untuk Bayar') }}</h3>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                            {{ __('Minta customer scan QR ini pakai e-wallet atau m-banking apa saja.') }}</p>
+
+                        @if ($qrisPayment->qr_url)
+                            <img src="{{ $qrisPayment->qr_url }}" alt="QRIS" class="mt-4 mx-auto h-56 w-56">
+                        @endif
+
+                        <p class="mt-4 text-2xl font-bold text-slate-900 dark:text-slate-100">Rp
+                            {{ number_format($qrisPayment->amount, 0, ',', '.') }}</p>
+
+                        <div class="mt-4 flex items-center justify-center gap-2 text-sm text-brand-600 dark:text-brand-400">
+                            <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            {{ __('Menunggu pembayaran...') }}
+                        </div>
+
+                        <button type="button" wire:click="cancelQrisPayment"
+                            class="mt-6 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">
+                            {{ __('Batalkan') }}
+                        </button>
+                    @elseif ($qrisPayment->status === 'expired')
+                        <p class="text-rose-600 dark:text-rose-400 font-medium">{{ __('QR sudah kedaluwarsa.') }}</p>
+                        <button type="button" wire:click="cancelQrisPayment"
+                            class="mt-4 inline-flex items-center px-4 py-2.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-medium text-sm text-slate-700 dark:text-slate-200">
+                            {{ __('Tutup') }}
+                        </button>
+                    @else
+                        <p class="text-rose-600 dark:text-rose-400 font-medium">
+                            {{ __('Pembayaran dibatalkan atau gagal.') }}</p>
+                        <button type="button" wire:click="cancelQrisPayment"
+                            class="mt-4 inline-flex items-center px-4 py-2.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-medium text-sm text-slate-700 dark:text-slate-200">
+                            {{ __('Tutup') }}
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>

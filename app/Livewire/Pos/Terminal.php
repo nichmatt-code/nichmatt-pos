@@ -8,12 +8,14 @@ use App\Models\InventoryMovement;
 use App\Models\LossRecord;
 use App\Models\LossRecordItem;
 use App\Models\Product;
+use App\Models\QrisPayment;
 use App\Models\SelfOrder;
 use App\Models\StockMovement;
 use App\Models\Store;
 use App\Models\Tag;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
+use App\Services\Contracts\MidtransQrisGatewayContract;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -64,6 +66,8 @@ class Terminal extends Component
     public string $lossReason = '';
 
     public ?int $lastLossRecordId = null;
+
+    public ?int $qrisPaymentId = null;
 
     public function addToCart(int $productId): void
     {
@@ -467,26 +471,57 @@ class Terminal extends Component
             return;
         }
 
-        $transaction = DB::transaction(function () use ($paidAmount) {
+        $transaction = $this->materializeTransaction($this->cart, [
+            'user_id' => Auth::id(),
+            'customer_id' => $this->selectedCustomerId,
+            'customer_name' => $this->customerName,
+            'order_note' => $this->orderNote,
+            'subtotal' => $this->subtotal,
+            'discount' => (int) $this->discount,
+            'tax_amount' => $this->taxAmount,
+            'service_charge_amount' => $this->serviceChargeAmount,
+            'total' => $this->total,
+            'payment_method' => $this->paymentMethod,
+            'paid_amount' => $paidAmount,
+            'change_amount' => max(0, $paidAmount - $this->total),
+            'claimed_self_order_id' => $this->claimedSelfOrderId,
+        ]);
+
+        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId']);
+        $this->discount = '0';
+        $this->lastTransactionId = $transaction->id;
+    }
+
+    /**
+     * Create the Transaction/TransactionItem rows and deduct product +
+     * ingredient stock for a cart - the one place this happens, shared by
+     * the normal (manual) checkout and by a settled online QRIS payment.
+     *
+     * @param  array<int, array{product_id: int, name: string, price: int, cost_price: int, qty: int, note: string, unlimited: bool}>  $cart
+     * @param  array{user_id: ?int, customer_id: ?int, customer_name: string, order_note: string, subtotal: int, discount: int, tax_amount: int, service_charge_amount: int, total: int, payment_method: string, paid_amount: int, change_amount: int, claimed_self_order_id: ?int}  $meta
+     */
+    private function materializeTransaction(array $cart, array $meta): Transaction
+    {
+        return DB::transaction(function () use ($cart, $meta) {
             $transaction = Transaction::create([
-                'user_id' => Auth::id(),
-                'self_order_id' => $this->claimedSelfOrderId,
-                'customer_id' => $this->selectedCustomerId,
+                'user_id' => $meta['user_id'],
+                'self_order_id' => $meta['claimed_self_order_id'],
+                'customer_id' => $meta['customer_id'],
                 'transaction_no' => 'TRX-'.now()->format('Ymd-His').'-'.random_int(100, 999),
-                'customer_name' => $this->customerName !== '' ? $this->customerName : null,
-                'note' => $this->orderNote !== '' ? $this->orderNote : null,
-                'subtotal' => $this->subtotal,
-                'discount' => (int) $this->discount,
-                'tax_amount' => $this->taxAmount,
-                'service_charge_amount' => $this->serviceChargeAmount,
-                'total' => $this->total,
-                'payment_method' => $this->paymentMethod,
-                'paid_amount' => $paidAmount,
-                'change_amount' => max(0, $paidAmount - $this->total),
+                'customer_name' => $meta['customer_name'] !== '' ? $meta['customer_name'] : null,
+                'note' => $meta['order_note'] !== '' ? $meta['order_note'] : null,
+                'subtotal' => $meta['subtotal'],
+                'discount' => $meta['discount'],
+                'tax_amount' => $meta['tax_amount'],
+                'service_charge_amount' => $meta['service_charge_amount'],
+                'total' => $meta['total'],
+                'payment_method' => $meta['payment_method'],
+                'paid_amount' => $meta['paid_amount'],
+                'change_amount' => $meta['change_amount'],
                 'status' => 'completed',
             ]);
 
-            foreach ($this->cart as $item) {
+            foreach ($cart as $item) {
                 TransactionItem::create([
                     'transaction_id' => $transaction->id,
                     'product_id' => $item['product_id'],
@@ -505,7 +540,7 @@ class Terminal extends Component
 
                     StockMovement::create([
                         'product_id' => $item['product_id'],
-                        'user_id' => Auth::id(),
+                        'user_id' => $meta['user_id'],
                         'type' => 'out',
                         'qty' => -$item['qty'],
                         'note' => 'Penjualan '.$transaction->transaction_no,
@@ -519,7 +554,7 @@ class Terminal extends Component
 
                     InventoryMovement::create([
                         'inventory_item_id' => $ingredient->id,
-                        'user_id' => Auth::id(),
+                        'user_id' => $meta['user_id'],
                         'type' => 'out',
                         'qty' => -$qtyUsed,
                         'note' => 'Penjualan '.$transaction->transaction_no,
@@ -527,16 +562,204 @@ class Terminal extends Component
                 }
             }
 
-            if ($this->claimedSelfOrderId) {
-                SelfOrder::where('id', $this->claimedSelfOrderId)->update(['status' => 'completed']);
+            if ($meta['claimed_self_order_id']) {
+                SelfOrder::where('id', $meta['claimed_self_order_id'])->update(['status' => 'completed']);
             }
 
             return $transaction;
         });
+    }
+
+    /**
+     * Start an online QRIS payment against the store's own Midtrans
+     * merchant account: a dynamic QR sized to the exact total is generated,
+     * and nothing is booked as a sale yet - the cart is only turned into a
+     * real Transaction once the payment actually settles.
+     */
+    public function payWithQrisOnline(MidtransQrisGatewayContract $gateway): void
+    {
+        if (! $this->store->canAcceptOnlinePayments()) {
+            return;
+        }
+
+        $this->validate([
+            'discount' => ['required', 'integer', 'min:0'],
+            'customerName' => ['nullable', 'string', 'max:255'],
+            'orderNote' => ['nullable', 'string', 'max:255'],
+            'cart.*.price' => ['required', 'integer', 'min:0'],
+        ]);
+
+        if (empty($this->cart)) {
+            $this->addError('cart', 'Keranjang masih kosong.');
+
+            return;
+        }
+
+        if (! $this->store->allow_price_edit) {
+            $realPrices = Product::query()->whereIn('id', array_column($this->cart, 'product_id'))->pluck('price', 'id');
+
+            foreach ($this->cart as $productId => $item) {
+                if (isset($realPrices[$productId])) {
+                    $this->cart[$productId]['price'] = $realPrices[$productId];
+                }
+            }
+        }
+
+        if ($this->discount > $this->subtotal) {
+            $this->addError('discount', 'Diskon tidak boleh melebihi subtotal.');
+
+            return;
+        }
+
+        $orderId = 'QRIS-'.$this->store->id.'-'.now()->format('YmdHis').'-'.random_int(100, 999);
+
+        $qrisPayment = QrisPayment::create([
+            'user_id' => Auth::id(),
+            'order_id' => $orderId,
+            'amount' => $this->total,
+            'status' => 'pending',
+            'cart_snapshot' => [
+                'cart' => $this->cart,
+                'customer_id' => $this->selectedCustomerId,
+                'customer_name' => $this->customerName,
+                'order_note' => $this->orderNote,
+                'subtotal' => $this->subtotal,
+                'discount' => (int) $this->discount,
+                'tax_amount' => $this->taxAmount,
+                'service_charge_amount' => $this->serviceChargeAmount,
+                'total' => $this->total,
+                'claimed_self_order_id' => $this->claimedSelfOrderId,
+            ],
+            'expires_at' => now()->addMinutes(15),
+        ]);
+
+        try {
+            $response = $gateway->charge($this->store, $orderId, $this->total);
+        } catch (\Throwable $e) {
+            $qrisPayment->update(['status' => 'failed']);
+            $this->addError('qrisPayment', 'Gagal membuat pembayaran QRIS: '.$e->getMessage());
+
+            return;
+        }
+
+        $qrUrl = collect($response->actions ?? [])
+            ->first(fn ($action) => ($action->name ?? null) === 'generate-qr-code');
+
+        $qrisPayment->update(['qr_url' => $qrUrl?->url]);
+        $this->qrisPaymentId = $qrisPayment->id;
+    }
+
+    /**
+     * Polled every few seconds while the QR modal is open - checks the
+     * store's own Midtrans account directly for the charge's status rather
+     * than waiting on a webhook, since a store owner forgetting to point
+     * their Midtrans Notification URL at this app must not leave the
+     * cashier stuck waiting forever.
+     */
+    public function checkQrisPaymentStatus(MidtransQrisGatewayContract $gateway): void
+    {
+        if (! $this->qrisPaymentId) {
+            return;
+        }
+
+        $qrisPayment = QrisPayment::find($this->qrisPaymentId);
+
+        if (! $qrisPayment) {
+            $this->qrisPaymentId = null;
+
+            return;
+        }
+
+        if (! $qrisPayment->isPending()) {
+            return;
+        }
+
+        if ($qrisPayment->isExpired()) {
+            $qrisPayment->update(['status' => 'expired']);
+
+            return;
+        }
+
+        try {
+            $status = $gateway->status($this->store, $qrisPayment->order_id);
+        } catch (\Throwable $e) {
+            return;
+        }
+
+        $transactionStatus = $status->transaction_status ?? null;
+        $fraudStatus = $status->fraud_status ?? null;
+
+        if (in_array($transactionStatus, ['capture', 'settlement'], true) && $fraudStatus !== 'deny') {
+            $this->completeQrisPayment($qrisPayment);
+        } elseif ($transactionStatus === 'expire') {
+            $qrisPayment->update(['status' => 'expired']);
+        } elseif (in_array($transactionStatus, ['cancel', 'deny'], true)) {
+            $qrisPayment->update(['status' => 'cancelled']);
+        }
+    }
+
+    /**
+     * Materialize a settled QRIS payment into a real Transaction. Guarded by
+     * transaction_id (not status) so a duplicate settlement check - e.g. two
+     * overlapping polls - can never create the sale twice.
+     */
+    private function completeQrisPayment(QrisPayment $qrisPayment): void
+    {
+        if ($qrisPayment->transaction_id) {
+            return;
+        }
+
+        $snapshot = $qrisPayment->cart_snapshot;
+
+        $transaction = $this->materializeTransaction($snapshot['cart'], [
+            'user_id' => $qrisPayment->user_id,
+            'customer_id' => $snapshot['customer_id'],
+            'customer_name' => $snapshot['customer_name'],
+            'order_note' => $snapshot['order_note'],
+            'subtotal' => $snapshot['subtotal'],
+            'discount' => $snapshot['discount'],
+            'tax_amount' => $snapshot['tax_amount'],
+            'service_charge_amount' => $snapshot['service_charge_amount'],
+            'total' => $snapshot['total'],
+            'payment_method' => 'qris',
+            'paid_amount' => $snapshot['total'],
+            'change_amount' => 0,
+            'claimed_self_order_id' => $snapshot['claimed_self_order_id'],
+        ]);
+
+        $qrisPayment->update(['status' => 'settled', 'paid_at' => now(), 'transaction_id' => $transaction->id]);
 
         $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId']);
         $this->discount = '0';
         $this->lastTransactionId = $transaction->id;
+        $this->qrisPaymentId = null;
+    }
+
+    /**
+     * Cancel a still-pending QR (best-effort on Midtrans's side too) so the
+     * cashier can back out and pick a different payment method.
+     */
+    public function cancelQrisPayment(MidtransQrisGatewayContract $gateway): void
+    {
+        $qrisPayment = $this->qrisPaymentId ? QrisPayment::find($this->qrisPaymentId) : null;
+
+        if ($qrisPayment && $qrisPayment->isPending()) {
+            try {
+                $gateway->cancel($this->store, $qrisPayment->order_id);
+            } catch (\Throwable $e) {
+                // Best-effort - the charge may already be expired/settled on
+                // Midtrans's side. The local status below is authoritative.
+            }
+
+            $qrisPayment->update(['status' => 'cancelled']);
+        }
+
+        $this->qrisPaymentId = null;
+    }
+
+    public function getQrisPaymentProperty(): ?QrisPayment
+    {
+        return $this->qrisPaymentId ? QrisPayment::find($this->qrisPaymentId) : null;
     }
 
     /**

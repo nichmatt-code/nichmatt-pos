@@ -206,6 +206,58 @@
         </form>
     </div>
 
+    <div class="mt-6 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Pembayaran Online (QRIS)') }}</h3>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {{ __('Hubungkan akun Midtrans milik toko Anda sendiri agar kasir bisa menerima pembayaran QRIS yang langsung masuk ke rekening/merchant Anda. Jika tidak diaktifkan, pembayaran tetap manual (tunai/QRIS statis/kartu) seperti sekarang.') }}
+        </p>
+
+        <form wire:submit="saveMidtransSettings" class="mt-4 space-y-4">
+            <label class="flex items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 p-4 cursor-pointer">
+                <input type="checkbox" wire:model="midtransPaymentEnabled" class="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800">
+                <span>
+                    <span class="block font-medium text-slate-900 dark:text-slate-100">{{ __('Aktifkan pembayaran QRIS online di Kasir') }}</span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('Menampilkan tombol "Bayar QRIS Online" di Kasir yang membuat kode QR dinamis sesuai total belanja.') }}</span>
+                </span>
+            </label>
+
+            <div>
+                <x-input-label for="midtransServerKey" value="Server Key" />
+                <x-text-input wire:model="midtransServerKey" id="midtransServerKey" type="password" class="block w-full"
+                    placeholder="{{ $hasMidtransServerKey ? '•••••••••• (tersimpan - isi untuk mengganti)' : 'Tempel Server Key dari dashboard Midtrans' }}" />
+                <x-input-error :messages="$errors->get('midtransServerKey')" class="mt-1" />
+            </div>
+
+            <div>
+                <x-input-label for="midtransClientKey" value="Client Key (opsional)" />
+                <x-text-input wire:model="midtransClientKey" id="midtransClientKey" type="text" class="block w-full" placeholder="Client Key dari dashboard Midtrans" />
+            </div>
+
+            <label class="flex items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 p-4 cursor-pointer">
+                <input type="checkbox" wire:model="midtransIsProduction" class="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800">
+                <span>
+                    <span class="block font-medium text-slate-900 dark:text-slate-100">{{ __('Mode Production') }}</span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('Matikan dulu untuk uji coba pakai akun Sandbox Midtrans, nyalakan setelah siap menerima pembayaran sungguhan.') }}</span>
+                </span>
+            </label>
+
+            <p class="text-xs text-slate-400 dark:text-slate-500">
+                {{ __('Belum punya akun? Daftar gratis di') }} midtrans.com, {{ __('ambil Server Key & Client Key dari menu Settings > Access Keys.') }}
+            </p>
+
+            <div class="flex items-center gap-4 pt-2">
+                <x-primary-button wire:loading.attr="disabled" wire:target="saveMidtransSettings">
+                    <span wire:loading.remove wire:target="saveMidtransSettings">{{ __('Simpan') }}</span>
+                    <span wire:loading wire:target="saveMidtransSettings">{{ __('Menyimpan...') }}</span>
+                </x-primary-button>
+
+                <x-action-message class="me-3" on="midtrans-settings-updated">
+                    {{ __('Tersimpan.') }}
+                </x-action-message>
+            </div>
+        </form>
+    </div>
+
     <div class="mt-6 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8" x-data>
         <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Link Self Order') }}</h3>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Bagikan link ini ke pelanggan (misalnya lewat kode QR di meja) agar mereka bisa pesan sendiri.') }}</p>

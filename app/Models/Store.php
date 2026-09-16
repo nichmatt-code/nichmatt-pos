@@ -31,6 +31,10 @@ class Store extends Model
         'phone',
         'logo_path',
         'logo_source',
+        'midtrans_payment_enabled',
+        'midtrans_server_key',
+        'midtrans_client_key',
+        'midtrans_is_production',
         'receipt_format',
         'show_product_images',
         'allow_price_edit',
@@ -56,6 +60,9 @@ class Store extends Model
             'is_active' => 'boolean',
             'show_product_images' => 'boolean',
             'allow_price_edit' => 'boolean',
+            'midtrans_payment_enabled' => 'boolean',
+            'midtrans_server_key' => 'encrypted',
+            'midtrans_is_production' => 'boolean',
             'tax_percent' => 'integer',
             'service_charge_percent' => 'integer',
             'trial_ends_at' => 'datetime',
@@ -217,5 +224,15 @@ class Store extends Model
     public function customers(): HasMany
     {
         return $this->hasMany(Customer::class);
+    }
+
+    /**
+     * Whether this store can take online QRIS payments through its own
+     * Midtrans merchant account - toggled on plus a server key actually
+     * saved, not just the toggle alone.
+     */
+    public function canAcceptOnlinePayments(): bool
+    {
+        return $this->midtrans_payment_enabled && (bool) $this->midtrans_server_key;
     }
 }

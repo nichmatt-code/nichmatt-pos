@@ -32,6 +32,61 @@ class BranchSettingsTest extends TestCase
         $this->assertSame('Jl. Baru No. 1', $store->fresh()->address);
     }
 
+    public function test_owner_can_enable_online_payments_with_a_server_key(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->set('midtransPaymentEnabled', true)
+            ->set('midtransServerKey', 'SB-Mid-server-abc123')
+            ->set('midtransClientKey', 'SB-Mid-client-abc123')
+            ->call('saveMidtransSettings')
+            ->assertHasNoErrors()
+            ->assertSet('midtransServerKey', '')
+            ->assertSet('hasMidtransServerKey', true);
+
+        $fresh = $store->fresh();
+        $this->assertTrue($fresh->midtrans_payment_enabled);
+        $this->assertSame('SB-Mid-server-abc123', $fresh->midtrans_server_key);
+        $this->assertSame('SB-Mid-client-abc123', $fresh->midtrans_client_key);
+    }
+
+    public function test_enabling_online_payments_without_ever_saving_a_server_key_fails(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->set('midtransPaymentEnabled', true)
+            ->set('midtransServerKey', '')
+            ->call('saveMidtransSettings')
+            ->assertHasErrors(['midtransServerKey']);
+
+        $this->assertFalse($store->fresh()->midtrans_payment_enabled);
+    }
+
+    public function test_saving_settings_without_a_new_server_key_keeps_the_previously_saved_one(): void
+    {
+        $store = Store::factory()->create([
+            'trial_ends_at' => now()->addDays(10),
+            'midtrans_payment_enabled' => true,
+            'midtrans_server_key' => 'SB-Mid-server-original',
+        ]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->set('midtransIsProduction', true)
+            ->call('saveMidtransSettings')
+            ->assertHasNoErrors();
+
+        $this->assertSame('SB-Mid-server-original', $store->fresh()->midtrans_server_key);
+        $this->assertTrue($store->fresh()->midtrans_is_production);
+    }
+
     public function test_kasir_without_permission_cannot_reach_branch_settings_page(): void
     {
         $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
