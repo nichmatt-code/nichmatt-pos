@@ -28,7 +28,7 @@
         <div class="min-h-screen bg-slate-50 dark:bg-slate-950">
             <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200/70 dark:border-slate-800/70">
                 <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-                    <x-application-logo class="h-8 w-auto" />
+                    <img src="{{ $store->appLogoUrl() }}" alt="{{ $store->name }}" class="h-8 w-auto object-contain">
                     <div class="min-w-0 flex-1">
                         <p class="font-semibold text-slate-900 dark:text-slate-100 truncate">{{ $store->name }}</p>
                         <p class="text-xs text-slate-400 dark:text-slate-500">{{ __('Self Order') }}</p>

@@ -67,6 +67,48 @@ class ProductIngredientTest extends TestCase
         $this->assertCount(0, $product->fresh()->ingredients);
     }
 
+    public function test_owner_can_quick_create_a_new_inventory_item_while_editing_a_product(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Index::class)
+            ->call('createProduct')
+            ->set('name', 'Kopi Susu')
+            ->set('price', '18000')
+            ->set('cost_price', '9000')
+            ->set('newIngredientName', 'Susu UHT')
+            ->set('newIngredientUnit', 'ml')
+            ->call('addIngredient')
+            ->assertHasNoErrors()
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $item = InventoryItem::where('name', 'Susu UHT')->firstOrFail();
+        $this->assertSame($store->id, $item->store_id);
+        $this->assertSame('ml', $item->unit);
+        $this->assertSame(0, $item->stock_qty);
+
+        $product = Product::where('name', 'Kopi Susu')->firstOrFail();
+        $this->assertSame(1, (int) $product->ingredients()->find($item->id)->pivot->qty_used);
+    }
+
+    public function test_quick_creating_an_inventory_item_requires_a_name(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Index::class)
+            ->call('createProduct')
+            ->set('newIngredientName', '')
+            ->call('addIngredient')
+            ->assertHasErrors('newIngredientName');
+
+        $this->assertDatabaseCount('inventory_items', 0);
+    }
+
     public function test_checkout_deducts_ingredient_stock_proportionally_to_qty_sold(): void
     {
         $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);

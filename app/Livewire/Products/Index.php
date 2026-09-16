@@ -58,6 +58,10 @@ class Index extends Component
     /** @var array<int, string> keyed by inventory_item_id */
     public array $ingredientQty = [];
 
+    public string $newIngredientName = '';
+
+    public string $newIngredientUnit = 'pcs';
+
     public mixed $image = null;
 
     public ?string $existingImageUrl = null;
@@ -79,9 +83,10 @@ class Index extends Component
 
     public function createProduct(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'category_id', 'tag_ids', 'newTagName', 'sku', 'barcode', 'price', 'cost_price', 'unit', 'stock_qty', 'is_out_of_stock', 'is_unlimited_stock', 'ingredientQty', 'image', 'existingImageUrl', 'removeExistingImage']);
+        $this->reset(['editingId', 'name', 'description', 'category_id', 'tag_ids', 'newTagName', 'sku', 'barcode', 'price', 'cost_price', 'unit', 'stock_qty', 'is_out_of_stock', 'is_unlimited_stock', 'ingredientQty', 'newIngredientName', 'newIngredientUnit', 'image', 'existingImageUrl', 'removeExistingImage']);
         $this->unit = 'pcs';
         $this->stock_qty = '0';
+        $this->newIngredientUnit = 'pcs';
         $this->showFormModal = true;
     }
 
@@ -106,6 +111,8 @@ class Index extends Component
         $this->ingredientQty = $product->ingredients
             ->mapWithKeys(fn (InventoryItem $item) => [$item->id => (string) $item->pivot->qty_used])
             ->all();
+        $this->newIngredientName = '';
+        $this->newIngredientUnit = 'pcs';
         $this->image = null;
         $this->existingImageUrl = $product->imageUrl();
         $this->removeExistingImage = false;
@@ -123,6 +130,30 @@ class Index extends Component
         } else {
             $this->ingredientQty[$inventoryItemId] = '1';
         }
+    }
+
+    /**
+     * Quick-create a brand new Inventory item (rather than picking from the
+     * existing list) and immediately mark it as an ingredient of this
+     * product. It shows up in the standalone Inventory page right away.
+     */
+    public function addIngredient(): void
+    {
+        $validated = $this->validate([
+            'newIngredientName' => ['required', 'string', 'max:255'],
+            'newIngredientUnit' => ['required', 'string', 'max:50'],
+        ], attributes: ['newIngredientName' => 'nama bahan', 'newIngredientUnit' => 'satuan']);
+
+        $item = InventoryItem::create([
+            'name' => $validated['newIngredientName'],
+            'unit' => $validated['newIngredientUnit'],
+            'stock_qty' => 0,
+            'min_stock' => 0,
+        ]);
+
+        $this->ingredientQty[$item->id] = '1';
+        $this->newIngredientName = '';
+        $this->newIngredientUnit = 'pcs';
     }
 
     /**
@@ -292,7 +323,7 @@ class Index extends Component
     {
         return view('livewire.products.index', [
             'products' => Product::query()
-                ->with(['category', 'tags'])
+                ->with(['category', 'tags', 'store'])
                 ->when($this->search, fn ($query) => $query->where('name', 'like', "%{$this->search}%"))
                 ->orderBy('name')
                 ->paginate(15),

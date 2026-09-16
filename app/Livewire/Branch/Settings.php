@@ -27,6 +27,8 @@ class Settings extends Component
 
     public bool $removeExistingLogo = false;
 
+    public string $logoSource = Store::LOGO_SOURCE_POS;
+
     public bool $showProductImages = true;
 
     public bool $allowPriceEdit = false;
@@ -44,6 +46,7 @@ class Settings extends Component
         $this->phone = (string) $store->phone;
         $this->receiptFormat = $store->receipt_format;
         $this->existingLogoUrl = $store->logoUrl();
+        $this->logoSource = $store->logo_source;
         $this->showProductImages = $store->show_product_images;
         $this->allowPriceEdit = $store->allow_price_edit;
         $this->taxPercent = (string) $store->tax_percent;
@@ -72,8 +75,9 @@ class Settings extends Component
 
     public function saveLogo(): void
     {
-        $this->validate([
+        $validated = $this->validate([
             'logo' => ['nullable', 'image', 'max:2048'],
+            'logoSource' => ['required', 'in:'.Store::LOGO_SOURCE_POS.','.Store::LOGO_SOURCE_STORE],
         ]);
 
         $store = Auth::user()->store;
@@ -87,6 +91,8 @@ class Settings extends Component
             Storage::disk('public')->delete($store->logo_path);
             $store->update(['logo_path' => null]);
         }
+
+        $store->update(['logo_source' => $validated['logoSource']]);
 
         $this->logo = null;
         $this->removeExistingLogo = false;

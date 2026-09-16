@@ -90,7 +90,7 @@ class Terminal extends Component
 
     public function getViewingProductProperty(): ?Product
     {
-        return $this->viewingProductId ? Product::find($this->viewingProductId) : null;
+        return $this->viewingProductId ? Product::with('store')->find($this->viewingProductId) : null;
     }
 
     /**
@@ -535,7 +535,7 @@ class Terminal extends Component
                 'tags', fn ($tagQuery) => $tagQuery->whereIn('tags.id', $this->activeTags)
             ))
             ->when($this->activeCategoryId, fn ($query) => $query->where('category_id', $this->activeCategoryId))
-            ->with('category')
+            ->with(['category', 'store'])
             ->orderBy('name')
             ->limit(40)
             ->get();

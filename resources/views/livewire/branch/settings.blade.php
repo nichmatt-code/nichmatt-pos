@@ -93,6 +93,21 @@
             </div>
             <x-input-error :messages="$errors->get('logo')" class="mt-2" />
 
+            <div>
+                <x-input-label value="Logo yang Ditampilkan di Aplikasi" />
+                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('Dipakai di navbar dan sebagai gambar produk yang belum punya foto.') }}</p>
+                <div class="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <label class="flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-sm font-medium transition {{ $logoSource === 'pos' ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-brand-500/10 dark:border-brand-700 dark:text-brand-300' : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400' }}">
+                        <input type="radio" wire:model="logoSource" value="pos" class="text-brand-600 focus:ring-brand-500">
+                        {{ __('Logo NichmattPOS') }}
+                    </label>
+                    <label class="flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-sm font-medium transition {{ ($existingLogoUrl || $logo) ? '' : 'opacity-40 cursor-not-allowed' }} {{ $logoSource === 'store' ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-brand-500/10 dark:border-brand-700 dark:text-brand-300' : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400' }}">
+                        <input type="radio" wire:model="logoSource" value="store" @disabled(! ($existingLogoUrl || $logo)) class="text-brand-600 focus:ring-brand-500">
+                        {{ __('Logo Toko Saya') }}
+                    </label>
+                </div>
+            </div>
+
             <div class="flex items-center gap-4">
                 <x-primary-button type="submit" wire:loading.attr="disabled" wire:target="saveLogo,logo">
                     <span wire:loading.remove wire:target="saveLogo">{{ __('Simpan Logo') }}</span>

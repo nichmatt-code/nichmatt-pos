@@ -21,11 +21,16 @@ class Store extends Model
 
     public const RECEIPT_FORMAT_PDF = 'pdf';
 
+    public const LOGO_SOURCE_POS = 'pos';
+
+    public const LOGO_SOURCE_STORE = 'store';
+
     protected $fillable = [
         'name',
         'address',
         'phone',
         'logo_path',
+        'logo_source',
         'receipt_format',
         'show_product_images',
         'allow_price_edit',
@@ -193,6 +198,20 @@ class Store extends Model
     public function logoUrl(): ?string
     {
         return $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null;
+    }
+
+    /**
+     * The logo shown app-wide (navbar, and in place of a product photo) -
+     * the store's own uploaded logo when that's chosen and one exists,
+     * otherwise NichmattPOS's own logo.
+     */
+    public function appLogoUrl(): string
+    {
+        if ($this->logo_source === self::LOGO_SOURCE_STORE && $this->logoUrl()) {
+            return $this->logoUrl();
+        }
+
+        return asset('images/logo.png');
     }
 
     public function customers(): HasMany

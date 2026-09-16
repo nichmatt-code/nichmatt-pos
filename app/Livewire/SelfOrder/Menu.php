@@ -223,7 +223,8 @@ class Menu extends Component
     {
         return Product::query()
             ->where('store_id', $this->store->id)
-            ->where('is_active', true);
+            ->where('is_active', true)
+            ->with('store');
     }
 
     public function render(): View

@@ -4,6 +4,6 @@
     <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" {{ $attributes->merge(['class' => $class.' object-cover']) }}>
 @else
     <span {{ $attributes->merge(['class' => $class.' flex items-center justify-center bg-slate-100 dark:bg-slate-800 p-2']) }}>
-        <img src="{{ asset('images/logo.png') }}" alt="" class="max-h-full max-w-full object-contain grayscale opacity-30 dark:opacity-20">
+        <img src="{{ $product->store?->appLogoUrl() ?? asset('images/logo.png') }}" alt="" class="max-h-full max-w-full object-contain grayscale opacity-30 dark:opacity-20">
     </span>
 @endif

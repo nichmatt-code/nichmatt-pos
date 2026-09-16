@@ -123,4 +123,30 @@ class BranchSettingsTest extends TestCase
         Storage::disk('public')->assertMissing($path);
         $this->assertNull($store->fresh()->logo_path);
     }
+
+    public function test_owner_can_switch_the_app_logo_to_the_store_logo(): void
+    {
+        Storage::fake('public');
+
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->set('logo', UploadedFile::fake()->image('logo.jpg'))
+            ->set('logoSource', 'store')
+            ->call('saveLogo')
+            ->assertHasNoErrors();
+
+        $store->refresh();
+        $this->assertSame('store', $store->logo_source);
+        $this->assertSame($store->logoUrl(), $store->appLogoUrl());
+    }
+
+    public function test_app_logo_falls_back_to_the_pos_logo_when_store_source_has_no_upload(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10), 'logo_source' => 'store', 'logo_path' => null]);
+
+        $this->assertStringContainsString('images/logo.png', $store->appLogoUrl());
+    }
 }

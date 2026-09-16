@@ -193,6 +193,22 @@
                             <span class="text-xs text-slate-400 dark:text-slate-500">{{ __('Belum ada barang di Inventory.') }}</span>
                         @endforelse
                     </div>
+
+                    <div class="mt-2.5 flex gap-2">
+                        <x-text-input wire:model="newIngredientName" wire:keydown.enter.prevent="addIngredient" type="text" class="flex-1 text-sm" placeholder="Bahan baru, mis. Keju Mozarella" />
+                        <select wire:model="newIngredientUnit" class="w-24 text-sm border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100">
+                            <option value="pcs">pcs</option>
+                            <option value="gr">gr</option>
+                            <option value="kg">kg</option>
+                            <option value="ml">ml</option>
+                            <option value="liter">liter</option>
+                            <option value="botol">botol</option>
+                            <option value="pack">pack</option>
+                        </select>
+                        <button type="button" wire:click="addIngredient" class="shrink-0 px-3 py-2 text-xs font-medium text-brand-700 bg-brand-50 rounded-lg hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-500/10 dark:hover:bg-brand-500/20">{{ __('Tambah') }}</button>
+                    </div>
+                    <x-input-error :messages="$errors->get('newIngredientName')" class="mt-1" />
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Bahan baru otomatis muncul juga di halaman Inventory.') }}</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">

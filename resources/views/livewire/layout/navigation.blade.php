@@ -85,7 +85,7 @@ new class extends Component
         <div class="flex items-center justify-between h-14">
             <!-- Logo -->
             <a href="{{ route('pos') }}" wire:navigate class="shrink-0 flex items-center">
-                <x-application-logo class="block h-8 w-auto" />
+                <img src="{{ auth()->user()->store?->appLogoUrl() ?? asset('images/logo.png') }}" alt="{{ config('app.name') }}" class="block h-8 w-auto object-contain">
             </a>
 
             <!-- Settings -->
