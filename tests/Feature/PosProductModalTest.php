@@ -56,7 +56,8 @@ class PosProductModalTest extends TestCase
             ->call('confirmAddToCart')
             ->assertSet('viewingProductId', null)
             ->assertDispatched('product-added')
-            ->assertSet('cart.'.$product->id.'.qty', 3);
+            ->assertSet('cart.'.$product->id.'.qty', 3)
+            ->assertDontSeeHtml('wire:click="confirmAddToCart"');
     }
 
     public function test_modal_quantity_is_capped_by_available_stock(): void

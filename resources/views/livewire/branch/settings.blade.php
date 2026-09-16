@@ -133,6 +133,52 @@
         </form>
     </div>
 
+    <div class="mt-6 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Pengaturan Kasir') }}</h3>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Atur tampilan dan perilaku halaman Kasir.') }}</p>
+
+        <form wire:submit="savePosSettings" class="mt-4 space-y-4">
+            <label class="flex items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 p-4 cursor-pointer">
+                <input type="checkbox" wire:model="showProductImages" class="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800">
+                <span>
+                    <span class="block font-medium text-slate-900 dark:text-slate-100">{{ __('Tampilkan gambar produk') }}</span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('Matikan untuk tampilan daftar produk yang lebih ringkas dan cepat di layar Kasir.') }}</span>
+                </span>
+            </label>
+
+            <label class="flex items-start gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 p-4 cursor-pointer">
+                <input type="checkbox" wire:model="allowPriceEdit" class="mt-1 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800">
+                <span>
+                    <span class="block font-medium text-slate-900 dark:text-slate-100">{{ __('Kasir bisa mengubah harga saat transaksi') }}</span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('Bila aktif, harga tiap item di keranjang bisa diedit langsung oleh kasir sebelum pembayaran.') }}</span>
+                </span>
+            </label>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <x-input-label for="taxPercent" value="Pajak (%)" />
+                    <x-text-input wire:model="taxPercent" id="taxPercent" type="number" min="0" max="100" class="block w-full" />
+                    <x-input-error :messages="$errors->get('taxPercent')" class="mt-1" />
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('mis. 11 untuk PPN 11%. Isi 0 bila tidak ada pajak.') }}</p>
+                </div>
+                <div>
+                    <x-input-label for="serviceChargePercent" value="Service Charge (%)" />
+                    <x-text-input wire:model="serviceChargePercent" id="serviceChargePercent" type="number" min="0" max="100" class="block w-full" />
+                    <x-input-error :messages="$errors->get('serviceChargePercent')" class="mt-1" />
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Isi 0 bila tidak ada service charge.') }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4 pt-2">
+                <x-primary-button>{{ __('Simpan') }}</x-primary-button>
+
+                <x-action-message class="me-3" on="pos-settings-updated">
+                    {{ __('Tersimpan.') }}
+                </x-action-message>
+            </div>
+        </form>
+    </div>
+
     <div class="mt-6 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8" x-data>
         <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Link Self Order') }}</h3>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Bagikan link ini ke pelanggan (misalnya lewat kode QR di meja) agar mereka bisa pesan sendiri.') }}</p>

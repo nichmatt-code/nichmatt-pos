@@ -24,6 +24,8 @@ class Transaction extends Model
         'note',
         'subtotal',
         'discount',
+        'tax_amount',
+        'service_charge_amount',
         'total',
         'payment_method',
         'paid_amount',
@@ -37,6 +39,8 @@ class Transaction extends Model
         return [
             'subtotal' => 'integer',
             'discount' => 'integer',
+            'tax_amount' => 'integer',
+            'service_charge_amount' => 'integer',
             'total' => 'integer',
             'paid_amount' => 'integer',
             'change_amount' => 'integer',

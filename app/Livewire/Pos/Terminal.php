@@ -8,6 +8,7 @@ use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\SelfOrder;
 use App\Models\StockMovement;
+use App\Models\Store;
 use App\Models\Tag;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
@@ -365,6 +366,8 @@ class Terminal extends Component
             'items' => array_values($this->cart),
             'subtotal' => $this->subtotal,
             'discount' => (int) $this->discount,
+            'tax_amount' => $this->taxAmount,
+            'service_charge_amount' => $this->serviceChargeAmount,
             'total' => $this->total,
         ]]);
 
@@ -378,14 +381,34 @@ class Terminal extends Component
         $this->paymentMethod = 'cash';
     }
 
+    public function getStoreProperty(): Store
+    {
+        return Auth::user()->store;
+    }
+
     public function getSubtotalProperty(): int
     {
         return collect($this->cart)->sum(fn (array $item) => $item['price'] * $item['qty']);
     }
 
-    public function getTotalProperty(): int
+    public function getDiscountedSubtotalProperty(): int
     {
         return max(0, $this->subtotal - (int) $this->discount);
+    }
+
+    public function getTaxAmountProperty(): int
+    {
+        return $this->store->taxAmountFor($this->discountedSubtotal);
+    }
+
+    public function getServiceChargeAmountProperty(): int
+    {
+        return $this->store->serviceChargeAmountFor($this->discountedSubtotal);
+    }
+
+    public function getTotalProperty(): int
+    {
+        return $this->discountedSubtotal + $this->taxAmount + $this->serviceChargeAmount;
     }
 
     public function getChangeProperty(): int
@@ -400,12 +423,26 @@ class Terminal extends Component
             'discount' => ['required', 'integer', 'min:0'],
             'customerName' => ['nullable', 'string', 'max:255'],
             'orderNote' => ['nullable', 'string', 'max:255'],
+            'cart.*.price' => ['required', 'integer', 'min:0'],
         ]);
 
         if (empty($this->cart)) {
             $this->addError('cart', 'Keranjang masih kosong.');
 
             return;
+        }
+
+        // The price input is only rendered when the store allows editing it,
+        // but a forged request could still set cart.*.price directly - so
+        // reassert the real product price server-side whenever it's off.
+        if (! $this->store->allow_price_edit) {
+            $realPrices = Product::query()->whereIn('id', array_column($this->cart, 'product_id'))->pluck('price', 'id');
+
+            foreach ($this->cart as $productId => $item) {
+                if (isset($realPrices[$productId])) {
+                    $this->cart[$productId]['price'] = $realPrices[$productId];
+                }
+            }
         }
 
         if ($this->discount > $this->subtotal) {
@@ -432,6 +469,8 @@ class Terminal extends Component
                 'note' => $this->orderNote !== '' ? $this->orderNote : null,
                 'subtotal' => $this->subtotal,
                 'discount' => (int) $this->discount,
+                'tax_amount' => $this->taxAmount,
+                'service_charge_amount' => $this->serviceChargeAmount,
                 'total' => $this->total,
                 'payment_method' => $this->paymentMethod,
                 'paid_amount' => $paidAmount,

@@ -69,7 +69,7 @@
                             <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-2">{{ $category->name }}</h4>
                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 @foreach ($items as $product)
-                                    @include('livewire.pos.product-card', ['product' => $product])
+                                    @include('livewire.pos.product-card', ['product' => $product, 'showImage' => $this->store->show_product_images])
                                 @endforeach
                             </div>
                         </div>
@@ -82,7 +82,7 @@
                         <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-2">{{ __('Tanpa Kategori') }}</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             @foreach ($uncategorized as $product)
-                                @include('livewire.pos.product-card', ['product' => $product])
+                                @include('livewire.pos.product-card', ['product' => $product, 'showImage' => $this->store->show_product_images])
                             @endforeach
                         </div>
                     </div>
@@ -95,7 +95,7 @@
         @else
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 @forelse ($products as $product)
-                    @include('livewire.pos.product-card', ['product' => $product])
+                    @include('livewire.pos.product-card', ['product' => $product, 'showImage' => $this->store->show_product_images])
                 @empty
                     <p class="col-span-full text-sm text-slate-500 dark:text-slate-400">{{ __('Produk tidak ditemukan.') }}</p>
                 @endforelse
@@ -205,7 +205,19 @@
                         <div class="flex items-center justify-between text-sm">
                             <div class="flex-1 pr-2">
                                 <div class="text-slate-900 dark:text-slate-100">{{ $item['name'] }}</div>
-                                <div class="text-slate-500 dark:text-slate-400">Rp {{ number_format($item['price'], 0, ',', '.') }}</div>
+                                @if ($this->store->allow_price_edit)
+                                    <div class="flex items-center gap-1 mt-0.5">
+                                        <span class="text-xs text-slate-400 dark:text-slate-500">Rp</span>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            wire:model.blur="cart.{{ $productId }}.price"
+                                            class="w-24 text-xs border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg py-1 px-2 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100"
+                                        />
+                                    </div>
+                                @else
+                                    <div class="text-slate-500 dark:text-slate-400">Rp {{ number_format($item['price'], 0, ',', '.') }}</div>
+                                @endif
                             </div>
                             <div class="flex items-center gap-2">
                                 <button type="button" wire:click="decrementQty({{ $productId }})" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">-</button>
@@ -236,6 +248,20 @@
                     <x-text-input wire:model.live="discount" id="discount" type="number" class="block w-full" />
                     <x-input-error :messages="$errors->get('discount')" class="mt-1" />
                 </div>
+
+                @if ($this->store->tax_percent > 0)
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500 dark:text-slate-400">{{ __('Pajak') }} ({{ $this->store->tax_percent }}%)</span>
+                        <span class="text-slate-900 dark:text-slate-100">Rp {{ number_format($this->taxAmount, 0, ',', '.') }}</span>
+                    </div>
+                @endif
+
+                @if ($this->store->service_charge_percent > 0)
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500 dark:text-slate-400">{{ __('Service Charge') }} ({{ $this->store->service_charge_percent }}%)</span>
+                        <span class="text-slate-900 dark:text-slate-100">Rp {{ number_format($this->serviceChargeAmount, 0, ',', '.') }}</span>
+                    </div>
+                @endif
 
                 <div class="flex justify-between text-base font-semibold pt-1">
                     <span class="text-slate-900 dark:text-slate-100">{{ __('Total') }}</span>
@@ -284,7 +310,7 @@
     </div>
 
     <!-- Product Detail Modal -->
-    @if ($this->viewingProduct)
+    @if ($viewingProductId && $this->viewingProduct)
         @php $viewingProduct = $this->viewingProduct; @endphp
         <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
             <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal"></div>

@@ -174,7 +174,7 @@
     @endif
 
     <!-- Product Detail Modal -->
-    @if ($this->viewingProduct)
+    @if ($viewingProductId && $this->viewingProduct)
         @php $viewingProduct = $this->viewingProduct; @endphp
         <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
             <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal"></div>

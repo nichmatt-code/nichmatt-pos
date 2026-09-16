@@ -27,6 +27,10 @@ class Store extends Model
         'phone',
         'logo_path',
         'receipt_format',
+        'show_product_images',
+        'allow_price_edit',
+        'tax_percent',
+        'service_charge_percent',
         'is_active',
         'order_token',
         'trial_ends_at',
@@ -45,6 +49,10 @@ class Store extends Model
     {
         return [
             'is_active' => 'boolean',
+            'show_product_images' => 'boolean',
+            'allow_price_edit' => 'boolean',
+            'tax_percent' => 'integer',
+            'service_charge_percent' => 'integer',
             'trial_ends_at' => 'datetime',
             'subscription_ends_at' => 'datetime',
         ];
@@ -170,6 +178,16 @@ class Store extends Model
     public function usesPdfReceipt(): bool
     {
         return $this->receipt_format === self::RECEIPT_FORMAT_PDF;
+    }
+
+    public function taxAmountFor(int $amount): int
+    {
+        return (int) round($amount * $this->tax_percent / 100);
+    }
+
+    public function serviceChargeAmountFor(int $amount): int
+    {
+        return (int) round($amount * $this->service_charge_percent / 100);
     }
 
     public function logoUrl(): ?string

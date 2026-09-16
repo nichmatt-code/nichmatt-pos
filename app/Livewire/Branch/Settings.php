@@ -27,6 +27,14 @@ class Settings extends Component
 
     public bool $removeExistingLogo = false;
 
+    public bool $showProductImages = true;
+
+    public bool $allowPriceEdit = false;
+
+    public string $taxPercent = '0';
+
+    public string $serviceChargePercent = '0';
+
     public function mount(): void
     {
         $store = Auth::user()->store;
@@ -36,6 +44,10 @@ class Settings extends Component
         $this->phone = (string) $store->phone;
         $this->receiptFormat = $store->receipt_format;
         $this->existingLogoUrl = $store->logoUrl();
+        $this->showProductImages = $store->show_product_images;
+        $this->allowPriceEdit = $store->allow_price_edit;
+        $this->taxPercent = (string) $store->tax_percent;
+        $this->serviceChargePercent = (string) $store->service_charge_percent;
     }
 
     public function save(): void
@@ -92,6 +104,25 @@ class Settings extends Component
         Auth::user()->store->update(['receipt_format' => $validated['receiptFormat']]);
 
         $this->dispatch('receipt-format-updated');
+    }
+
+    public function savePosSettings(): void
+    {
+        $validated = $this->validate([
+            'showProductImages' => ['boolean'],
+            'allowPriceEdit' => ['boolean'],
+            'taxPercent' => ['required', 'integer', 'min:0', 'max:100'],
+            'serviceChargePercent' => ['required', 'integer', 'min:0', 'max:100'],
+        ]);
+
+        Auth::user()->store->update([
+            'show_product_images' => $validated['showProductImages'],
+            'allow_price_edit' => $validated['allowPriceEdit'],
+            'tax_percent' => $validated['taxPercent'],
+            'service_charge_percent' => $validated['serviceChargePercent'],
+        ]);
+
+        $this->dispatch('pos-settings-updated');
     }
 
     public function render(): View
