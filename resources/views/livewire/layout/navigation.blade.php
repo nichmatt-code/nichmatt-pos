@@ -38,7 +38,7 @@ new class extends Component
         Auth::loginUsingId($userId);
         session()->regenerate();
 
-        $this->redirect(route('dashboard', absolute: false), navigate: true);
+        $this->redirect(route('pos', absolute: false), navigate: true);
     }
 
     /**
@@ -62,7 +62,7 @@ new class extends Component
 
         Auth::loginUsingId(array_pop($ids));
         session()->regenerate();
-        $this->redirect(route('dashboard', absolute: false), navigate: true);
+        $this->redirect(route('pos', absolute: false), navigate: true);
     }
 }; ?>
 
@@ -72,7 +72,7 @@ new class extends Component
         <div class="flex justify-between h-16">
             <div class="flex items-center gap-8">
                 <!-- Logo -->
-                <a href="{{ route('dashboard') }}" wire:navigate class="shrink-0 flex items-center">
+                <a href="{{ route('pos') }}" wire:navigate class="shrink-0 flex items-center">
                     <x-application-logo class="block h-8 w-auto" />
                 </a>
 
@@ -95,7 +95,7 @@ new class extends Component
                         </x-nav-link>
                     @endif
 
-                    <x-nav-dropdown label="{{ __('Operasional') }}" :active="$inOperational">
+                    <x-nav-dropdown label="{{ __('View') }}" :active="$inOperational">
                         <x-dropdown-link :href="route('pos')" wire:navigate>
                             {{ __('Kasir') }}
                         </x-dropdown-link>
@@ -264,7 +264,7 @@ new class extends Component
                 </x-responsive-nav-link>
             @endif
 
-            <p class="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('Operasional') }}</p>
+            <p class="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('View') }}</p>
             <x-responsive-nav-link :href="route('pos')" :active="request()->routeIs('pos')" wire:navigate>
                 {{ __('Kasir') }}
             </x-responsive-nav-link>

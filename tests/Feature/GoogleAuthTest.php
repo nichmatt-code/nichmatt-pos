@@ -37,7 +37,7 @@ class GoogleAuthTest extends TestCase
         $this->assertTrue($user->store->onTrial());
 
         $this->assertAuthenticatedAs($user);
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('pos'));
     }
 
     public function test_existing_user_email_is_linked_to_google_account(): void
@@ -90,7 +90,7 @@ class GoogleAuthTest extends TestCase
 
         Socialite::fake('google', $this->fakeGoogleUser('g-777', 'Akun Kedua', 'akun.kedua@example.com'));
 
-        $this->get('/auth/google/callback')->assertRedirect(route('dashboard'));
+        $this->get('/auth/google/callback')->assertRedirect(route('pos'));
 
         $second = User::where('email', 'akun.kedua@example.com')->firstOrFail();
 

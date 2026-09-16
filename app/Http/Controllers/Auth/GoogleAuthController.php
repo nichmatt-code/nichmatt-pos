@@ -83,6 +83,6 @@ class GoogleAuthController extends Controller
 
         $user->rememberAsLinkedAccount();
 
-        return redirect()->route('dashboard');
+        return redirect()->route('pos');
     }
 }
