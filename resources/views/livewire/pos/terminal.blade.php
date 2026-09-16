@@ -239,8 +239,15 @@
                 </x-secondary-button>
                 <p class="text-xs text-slate-400 dark:text-slate-500 text-center -mt-2">{{ __('Tunjukkan ke customer sebelum menerima pembayaran.') }}</p>
 
-                <x-primary-button wire:click="checkout" class="w-full justify-center py-3">
-                    {{ __('Konfirmasi Pembayaran') }}
+                <x-primary-button
+                    wire:click="checkout"
+                    wire:confirm="Pembayaran sudah diterima dari customer? Transaksi akan langsung disimpan dan stok berkurang."
+                    wire:loading.attr="disabled"
+                    wire:target="checkout"
+                    class="w-full justify-center py-3"
+                >
+                    <span wire:loading.remove wire:target="checkout">{{ __('Konfirmasi Pembayaran') }}</span>
+                    <span wire:loading wire:target="checkout">{{ __('Memproses...') }}</span>
                 </x-primary-button>
             </div>
         @endif

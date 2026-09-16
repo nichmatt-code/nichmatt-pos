@@ -158,8 +158,14 @@
                         <span class="text-brand-600 dark:text-brand-400">Rp {{ number_format($this->subtotal, 0, ',', '.') }}</span>
                     </div>
 
-                    <x-primary-button wire:click="confirmOrder" class="w-full justify-center py-3">
-                        {{ __('Konfirmasi Pesanan') }}
+                    <x-primary-button
+                        wire:click="confirmOrder"
+                        wire:loading.attr="disabled"
+                        wire:target="confirmOrder"
+                        class="w-full justify-center py-3"
+                    >
+                        <span wire:loading.remove wire:target="confirmOrder">{{ __('Konfirmasi Pesanan') }}</span>
+                        <span wire:loading wire:target="confirmOrder">{{ __('Memproses...') }}</span>
                     </x-primary-button>
                     <p class="text-xs text-slate-400 dark:text-slate-500 text-center">{{ __('Anda akan mendapat kode untuk membayar di kasir.') }}</p>
                 </div>
