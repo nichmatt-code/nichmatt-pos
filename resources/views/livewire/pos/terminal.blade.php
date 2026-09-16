@@ -249,17 +249,17 @@
                     <x-input-error :messages="$errors->get('discount')" class="mt-1" />
                 </div>
 
-                @if ($this->store->tax_percent > 0)
-                    <div class="flex justify-between text-sm">
-                        <span class="text-slate-500 dark:text-slate-400">{{ __('Pajak') }} ({{ $this->store->tax_percent }}%)</span>
-                        <span class="text-slate-900 dark:text-slate-100">Rp {{ number_format($this->taxAmount, 0, ',', '.') }}</span>
-                    </div>
-                @endif
-
                 @if ($this->store->service_charge_percent > 0)
                     <div class="flex justify-between text-sm">
                         <span class="text-slate-500 dark:text-slate-400">{{ __('Service Charge') }} ({{ $this->store->service_charge_percent }}%)</span>
                         <span class="text-slate-900 dark:text-slate-100">Rp {{ number_format($this->serviceChargeAmount, 0, ',', '.') }}</span>
+                    </div>
+                @endif
+
+                @if ($this->store->tax_percent > 0)
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500 dark:text-slate-400">{{ __('Pajak') }} ({{ $this->store->tax_percent }}%)</span>
+                        <span class="text-slate-900 dark:text-slate-100">Rp {{ number_format($this->taxAmount, 0, ',', '.') }}</span>
                     </div>
                 @endif
 

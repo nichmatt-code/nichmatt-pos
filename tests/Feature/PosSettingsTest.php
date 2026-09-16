@@ -37,8 +37,12 @@ class PosSettingsTest extends TestCase
         $this->assertSame(5, $store->service_charge_percent);
     }
 
-    public function test_checkout_applies_tax_and_service_charge_to_the_total(): void
+    public function test_checkout_applies_service_charge_then_tax_on_top_of_it(): void
     {
+        // Service charge is applied to the Rp 20.000 subtotal first (5% =
+        // Rp 1.000), then tax is calculated on top of that Rp 21.000 (10% =
+        // Rp 2.100) - the usual F&B order, not two independent percentages
+        // of the bare subtotal.
         $store = Store::factory()->create([
             'trial_ends_at' => now()->addDays(10),
             'tax_percent' => 10,
@@ -56,18 +60,18 @@ class PosSettingsTest extends TestCase
         Livewire::actingAs($cashier)
             ->test(Terminal::class)
             ->call('addToCart', $product->id)
-            ->assertSet('taxAmount', 2000)
             ->assertSet('serviceChargeAmount', 1000)
-            ->assertSet('total', 23000)
+            ->assertSet('taxAmount', 2100)
+            ->assertSet('total', 23100)
             ->set('paymentMethod', 'cash')
-            ->set('paidAmount', '23000')
+            ->set('paidAmount', '23100')
             ->call('checkout')
             ->assertHasNoErrors();
 
         $transaction = Transaction::firstOrFail();
-        $this->assertSame(2000, $transaction->tax_amount);
+        $this->assertSame(2100, $transaction->tax_amount);
         $this->assertSame(1000, $transaction->service_charge_amount);
-        $this->assertSame(23000, $transaction->total);
+        $this->assertSame(23100, $transaction->total);
     }
 
     public function test_cashier_can_edit_a_line_item_price_when_the_store_allows_it(): void

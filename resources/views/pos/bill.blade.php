@@ -87,16 +87,16 @@
                 <td class="right">-{{ number_format($bill['discount'], 0, ',', '.') }}</td>
             </tr>
         @endif
-        @if (($bill['tax_amount'] ?? 0) > 0)
-            <tr>
-                <td>Pajak</td>
-                <td class="right">{{ number_format($bill['tax_amount'], 0, ',', '.') }}</td>
-            </tr>
-        @endif
         @if (($bill['service_charge_amount'] ?? 0) > 0)
             <tr>
                 <td>Service Charge</td>
                 <td class="right">{{ number_format($bill['service_charge_amount'], 0, ',', '.') }}</td>
+            </tr>
+        @endif
+        @if (($bill['tax_amount'] ?? 0) > 0)
+            <tr>
+                <td>Pajak</td>
+                <td class="right">{{ number_format($bill['tax_amount'], 0, ',', '.') }}</td>
             </tr>
         @endif
         <tr>

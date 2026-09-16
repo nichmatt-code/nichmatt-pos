@@ -69,8 +69,8 @@ new class extends Component
 <nav x-data="{ open: false }" class="sticky top-0 z-40 bg-white/85 dark:bg-slate-900/85 backdrop-blur border-b border-slate-200/70 dark:border-slate-800/70">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex items-center gap-8">
+        <div class="flex flex-wrap items-center justify-between min-h-16 py-2 gap-x-4 gap-y-1.5">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 lg:gap-x-6 min-w-0">
                 <!-- Logo -->
                 <a href="{{ route('pos') }}" wire:navigate class="shrink-0 flex items-center">
                     <x-application-logo class="block h-8 w-auto" />
@@ -89,7 +89,7 @@ new class extends Component
                         || $user->hasPermission(\App\Permission::StoreSettings)
                         || $user->hasPermission(\App\Permission::Customers);
                 @endphp
-                <div class="hidden sm:flex sm:items-center sm:gap-1">
+                <div class="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-1">
                     @if ($user->hasPermission(\App\Permission::Dashboard))
                         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                             {{ __('Dashboard') }}
@@ -195,8 +195,8 @@ new class extends Component
             </div>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:gap-2">
-                <span class="text-sm text-slate-400 dark:text-slate-500 mr-2">{{ auth()->user()->store?->name }}</span>
+            <div class="hidden sm:flex sm:items-center sm:gap-2 shrink-0">
+                <span class="hidden lg:inline-block text-sm text-slate-400 dark:text-slate-500 mr-2 truncate max-w-[140px]" title="{{ auth()->user()->store?->name }}">{{ auth()->user()->store?->name }}</span>
 
                 <x-fullscreen-toggle />
                 <x-theme-toggle />

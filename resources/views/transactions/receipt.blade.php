@@ -82,16 +82,16 @@
                 <td class="right">-{{ number_format($transaction->discount, 0, ',', '.') }}</td>
             </tr>
         @endif
-        @if ($transaction->tax_amount > 0)
-            <tr>
-                <td>Pajak</td>
-                <td class="right">{{ number_format($transaction->tax_amount, 0, ',', '.') }}</td>
-            </tr>
-        @endif
         @if ($transaction->service_charge_amount > 0)
             <tr>
                 <td>Service Charge</td>
                 <td class="right">{{ number_format($transaction->service_charge_amount, 0, ',', '.') }}</td>
+            </tr>
+        @endif
+        @if ($transaction->tax_amount > 0)
+            <tr>
+                <td>Pajak</td>
+                <td class="right">{{ number_format($transaction->tax_amount, 0, ',', '.') }}</td>
             </tr>
         @endif
         <tr>

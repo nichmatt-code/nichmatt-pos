@@ -396,19 +396,25 @@ class Terminal extends Component
         return max(0, $this->subtotal - (int) $this->discount);
     }
 
-    public function getTaxAmountProperty(): int
-    {
-        return $this->store->taxAmountFor($this->discountedSubtotal);
-    }
-
+    /**
+     * Service charge is applied first (on the discounted subtotal), then tax
+     * is calculated on top of subtotal + service charge - the usual F&B
+     * order, since tax authorities generally treat the service charge as
+     * part of the taxable amount.
+     */
     public function getServiceChargeAmountProperty(): int
     {
         return $this->store->serviceChargeAmountFor($this->discountedSubtotal);
     }
 
+    public function getTaxAmountProperty(): int
+    {
+        return $this->store->taxAmountFor($this->discountedSubtotal + $this->serviceChargeAmount);
+    }
+
     public function getTotalProperty(): int
     {
-        return $this->discountedSubtotal + $this->taxAmount + $this->serviceChargeAmount;
+        return $this->discountedSubtotal + $this->serviceChargeAmount + $this->taxAmount;
     }
 
     public function getChangeProperty(): int

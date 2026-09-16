@@ -125,16 +125,16 @@
                 <td class="right">-Rp {{ number_format($transaction->discount, 0, ',', '.') }}</td>
             </tr>
         @endif
-        @if ($transaction->tax_amount > 0)
-            <tr>
-                <td>{{ __('Pajak') }}</td>
-                <td class="right">Rp {{ number_format($transaction->tax_amount, 0, ',', '.') }}</td>
-            </tr>
-        @endif
         @if ($transaction->service_charge_amount > 0)
             <tr>
                 <td>{{ __('Service Charge') }}</td>
                 <td class="right">Rp {{ number_format($transaction->service_charge_amount, 0, ',', '.') }}</td>
+            </tr>
+        @endif
+        @if ($transaction->tax_amount > 0)
+            <tr>
+                <td>{{ __('Pajak') }}</td>
+                <td class="right">Rp {{ number_format($transaction->tax_amount, 0, ',', '.') }}</td>
             </tr>
         @endif
         <tr class="grand">
