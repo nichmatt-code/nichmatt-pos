@@ -1,4 +1,36 @@
 <div class="max-w-2xl">
+    <div class="mb-6 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Status Langganan') }}</h3>
+
+                @if ($store->subscriptionActive())
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        {{ __('Aktif sampai :date (:days hari lagi).', ['date' => $store->subscription_ends_at->translatedFormat('d F Y'), 'days' => $store->accessDaysLeft()]) }}
+                    </p>
+                @elseif ($store->onTrial())
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        {{ __('Masa trial sampai :date (:days hari lagi).', ['date' => $store->trial_ends_at->translatedFormat('d F Y'), 'days' => $store->accessDaysLeft()]) }}
+                    </p>
+                @else
+                    <p class="mt-1 text-sm text-rose-600 dark:text-rose-400 font-medium">{{ __('Masa aktif sudah habis.') }}</p>
+                @endif
+            </div>
+
+            @if ($store->subscriptionActive())
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">{{ __('Aktif') }}</span>
+            @elseif ($store->onTrial())
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">{{ __('Trial') }}</span>
+            @else
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{{ __('Kedaluwarsa') }}</span>
+            @endif
+        </div>
+
+        <a href="{{ route('billing.subscribe') }}" wire:navigate class="mt-4 inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 rounded-lg font-medium text-sm text-white shadow-sm hover:bg-brand-700 transition">
+            {{ __('Perpanjang Langganan') }}
+        </a>
+    </div>
+
     <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8">
         <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Informasi Cabang') }}</h3>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Detail ini muncul pada struk transaksi.') }}</p>

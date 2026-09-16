@@ -45,4 +45,42 @@ class BranchSettingsTest extends TestCase
 
         $this->actingAs($kasir)->get('/branch')->assertOk();
     }
+
+    public function test_page_shows_active_subscription_expiry_and_a_renew_link(): void
+    {
+        $store = Store::factory()->create([
+            'trial_ends_at' => now()->subDay(),
+            'subscription_status' => 'active',
+            'subscription_ends_at' => now()->addDays(15),
+        ]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->assertSee('Aktif')
+            ->assertSee($store->subscription_ends_at->translatedFormat('d F Y'))
+            ->assertSeeHtml(route('billing.subscribe'));
+    }
+
+    public function test_page_shows_trial_expiry_when_not_yet_subscribed(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(12)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->assertSee('Trial')
+            ->assertSee($store->trial_ends_at->translatedFormat('d F Y'));
+    }
+
+    public function test_page_shows_expired_status_once_trial_and_subscription_have_lapsed(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->subDays(5)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->assertSee('Kedaluwarsa')
+            ->assertSee('Masa aktif sudah habis');
+    }
 }
