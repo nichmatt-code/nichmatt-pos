@@ -42,6 +42,39 @@ class SubscriptionPlanBillingTest extends TestCase
         $this->assertSame(35000, $weekly->price);
         $this->assertSame(30, $monthly->duration_days);
         $this->assertSame(100000, $monthly->price);
+        $this->assertNotEmpty($weekly->description);
+        $this->assertNotEmpty($weekly->featureList());
+        $this->assertNotEmpty($monthly->description);
+        $this->assertNotEmpty($monthly->featureList());
+    }
+
+    public function test_feature_list_splits_on_newlines_and_ignores_blank_lines(): void
+    {
+        $plan = SubscriptionPlan::where('code', 'weekly')->firstOrFail();
+        $plan->update(['features' => "Fitur A\nFitur B\n\n  Fitur C  "]);
+
+        $this->assertSame(['Fitur A', 'Fitur B', 'Fitur C'], $plan->featureList());
+    }
+
+    public function test_feature_list_is_empty_when_no_features_are_set(): void
+    {
+        $plan = SubscriptionPlan::where('code', 'weekly')->firstOrFail();
+        $plan->update(['features' => null]);
+
+        $this->assertSame([], $plan->featureList());
+    }
+
+    public function test_subscribe_page_shows_the_selected_plans_description_and_features(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+        $weekly = SubscriptionPlan::where('code', 'weekly')->firstOrFail();
+
+        Livewire::actingAs($owner)
+            ->test(Subscribe::class)
+            ->call('selectPlan', $weekly->id)
+            ->assertSee($weekly->description)
+            ->assertSee($weekly->featureList()[0]);
     }
 
     public function test_subscribe_page_lists_active_plans_and_defaults_to_the_first(): void

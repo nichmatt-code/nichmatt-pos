@@ -35,6 +35,9 @@
             >
                 <p class="font-medium text-slate-900 dark:text-slate-100">{{ $plan->name }}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400">{{ __(':days hari', ['days' => $plan->duration_days]) }}</p>
+                @if ($plan->description)
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ $plan->description }}</p>
+                @endif
 
                 <div class="mt-2">
                     @if ($plan->hasActivePromo())
@@ -50,6 +53,20 @@
             </button>
         @endforeach
     </div>
+
+    @if ($this->selectedPlan && $this->selectedPlan->featureList())
+        <div class="mt-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ __('Fitur yang didapat') }}</p>
+            <ul class="mt-2 space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
+                @foreach ($this->selectedPlan->featureList() as $feature)
+                    <li class="flex items-start gap-2">
+                        <svg class="h-5 w-5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        {{ $feature }}
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     <div class="mt-4">
         <x-input-label for="promoCodeInput" value="Kode Promo (opsional)" />

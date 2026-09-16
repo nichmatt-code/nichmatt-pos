@@ -27,6 +27,9 @@
                             <td class="px-6 py-3.5">
                                 <div class="text-slate-900 dark:text-slate-100 font-medium">{{ $plan->name }}</div>
                                 <div class="text-xs text-slate-400 dark:text-slate-500">{{ $plan->code }}</div>
+                                @if ($plan->description)
+                                    <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 max-w-xs truncate">{{ $plan->description }}</div>
+                                @endif
                             </td>
                             <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400">{{ $plan->duration_days }} {{ __('hari') }}</td>
                             <td class="px-6 py-3.5 text-slate-900 dark:text-slate-100">Rp {{ number_format($plan->price, 0, ',', '.') }}</td>
@@ -135,6 +138,18 @@
                         <x-text-input wire:model="planCode" id="planCode" type="text" class="block w-full" placeholder="weekly" />
                         <x-input-error :messages="$errors->get('planCode')" class="mt-2" />
                     </div>
+                </div>
+
+                <div>
+                    <x-input-label for="planDescription" value="Deskripsi Singkat (opsional)" />
+                    <textarea wire:model="planDescription" id="planDescription" rows="2" class="mt-1 block w-full border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100" placeholder="mis. Cocok untuk mencoba dulu sebelum berlangganan lebih lama."></textarea>
+                    <x-input-error :messages="$errors->get('planDescription')" class="mt-2" />
+                </div>
+
+                <div>
+                    <x-input-label for="planFeatures" value="Fitur yang Didapat (opsional, satu baris satu fitur)" />
+                    <textarea wire:model="planFeatures" id="planFeatures" rows="5" class="mt-1 block w-full border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100" placeholder="Kasir & Self-Order tanpa batas transaksi&#10;Inventory & Stock Opname&#10;Laporan penjualan real-time"></textarea>
+                    <x-input-error :messages="$errors->get('planFeatures')" class="mt-2" />
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">

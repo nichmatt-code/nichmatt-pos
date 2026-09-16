@@ -44,6 +44,25 @@ class DeveloperPricingTest extends TestCase
         $this->assertSame(1000000, $plan->price);
     }
 
+    public function test_developer_can_set_a_description_and_feature_list_on_a_plan(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $developer = User::factory()->create(['store_id' => $store->id, 'role' => 'owner', 'is_developer' => true]);
+        $plan = SubscriptionPlan::where('code', 'weekly')->firstOrFail();
+
+        Livewire::actingAs($developer)
+            ->test(Pricing::class)
+            ->call('editPlan', $plan->id)
+            ->set('planDescription', 'Cocok untuk toko yang baru mulai.')
+            ->set('planFeatures', "Kasir cepat\nLaporan penjualan\n\nInventory")
+            ->call('savePlan')
+            ->assertHasNoErrors();
+
+        $plan->refresh();
+        $this->assertSame('Cocok untuk toko yang baru mulai.', $plan->description);
+        $this->assertSame(['Kasir cepat', 'Laporan penjualan', 'Inventory'], $plan->featureList());
+    }
+
     public function test_developer_can_set_a_promo_price_on_a_plan(): void
     {
         $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);

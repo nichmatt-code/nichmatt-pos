@@ -18,6 +18,10 @@ class Pricing extends Component
 
     public string $planName = '';
 
+    public string $planDescription = '';
+
+    public string $planFeatures = '';
+
     public string $planDurationDays = '';
 
     public string $planPrice = '';
@@ -50,7 +54,7 @@ class Pricing extends Component
 
     public function createPlan(): void
     {
-        $this->reset(['editingPlanId', 'planCode', 'planName', 'planDurationDays', 'planPrice', 'planPromoPrice', 'planPromoLabel', 'planPromoEndsAt', 'planSortOrder']);
+        $this->reset(['editingPlanId', 'planCode', 'planName', 'planDescription', 'planFeatures', 'planDurationDays', 'planPrice', 'planPromoPrice', 'planPromoLabel', 'planPromoEndsAt', 'planSortOrder']);
         $this->planIsActive = true;
         $this->showPlanModal = true;
     }
@@ -62,6 +66,8 @@ class Pricing extends Component
         $this->editingPlanId = $plan->id;
         $this->planCode = $plan->code;
         $this->planName = $plan->name;
+        $this->planDescription = (string) $plan->description;
+        $this->planFeatures = (string) $plan->features;
         $this->planDurationDays = (string) $plan->duration_days;
         $this->planPrice = (string) $plan->price;
         $this->planPromoPrice = (string) $plan->promo_price;
@@ -77,6 +83,8 @@ class Pricing extends Component
         $validated = $this->validate([
             'planCode' => ['required', 'string', 'max:50', 'alpha_dash', Rule::unique('subscription_plans', 'code')->ignore($this->editingPlanId)],
             'planName' => ['required', 'string', 'max:255'],
+            'planDescription' => ['nullable', 'string', 'max:500'],
+            'planFeatures' => ['nullable', 'string', 'max:2000'],
             'planDurationDays' => ['required', 'integer', 'min:1'],
             'planPrice' => ['required', 'integer', 'min:0'],
             'planPromoPrice' => ['nullable', 'integer', 'min:0'],
@@ -88,6 +96,8 @@ class Pricing extends Component
         $data = [
             'code' => $validated['planCode'],
             'name' => $validated['planName'],
+            'description' => $validated['planDescription'] !== '' ? $validated['planDescription'] : null,
+            'features' => $validated['planFeatures'] !== '' ? $validated['planFeatures'] : null,
             'duration_days' => $validated['planDurationDays'],
             'price' => $validated['planPrice'],
             'promo_price' => $validated['planPromoPrice'] !== '' ? $validated['planPromoPrice'] : null,

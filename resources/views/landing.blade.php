@@ -184,7 +184,7 @@
                 @foreach ($plans as $plan)
                     <div class="bg-white border border-slate-200/70 shadow-soft rounded-2xl p-8">
                         <p class="font-semibold text-slate-900">{{ $plan->name }}</p>
-                        <p class="text-sm text-slate-500">{{ __('Akses penuh semua fitur, per toko') }}</p>
+                        <p class="text-sm text-slate-500">{{ $plan->description ?: __('Akses penuh semua fitur, per toko') }}</p>
 
                         <div class="mt-4">
                             @if ($plan->hasActivePromo())
@@ -205,18 +205,25 @@
                         </div>
 
                         <ul class="mt-6 space-y-2.5 text-sm text-slate-600">
-                            @foreach ([
-                                'Kasir & Self-Order tanpa batas transaksi',
-                                'Produk, kategori, dan tag tanpa batas',
-                                'Inventory & Stock Opname',
-                                'Manajemen karyawan & izin akses',
-                                'Laporan penjualan real-time',
-                            ] as $item)
+                            @forelse ($plan->featureList() as $feature)
                                 <li class="flex items-start gap-2">
                                     <svg class="h-5 w-5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                    {{ __($item) }}
+                                    {{ $feature }}
                                 </li>
-                            @endforeach
+                            @empty
+                                @foreach ([
+                                    'Kasir & Self-Order tanpa batas transaksi',
+                                    'Produk, kategori, dan tag tanpa batas',
+                                    'Inventory & Stock Opname',
+                                    'Manajemen karyawan & izin akses',
+                                    'Laporan penjualan real-time',
+                                ] as $item)
+                                    <li class="flex items-start gap-2">
+                                        <svg class="h-5 w-5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        {{ __($item) }}
+                                    </li>
+                                @endforeach
+                            @endforelse
                         </ul>
 
                         <div class="mt-8">

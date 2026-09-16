@@ -15,6 +15,8 @@ class SubscriptionPlan extends Model
     protected $fillable = [
         'code',
         'name',
+        'description',
+        'features',
         'duration_days',
         'price',
         'promo_price',
@@ -57,5 +59,24 @@ class SubscriptionPlan extends Model
     public function effectivePrice(): int
     {
         return $this->hasActivePromo() ? $this->promo_price : $this->price;
+    }
+
+    /**
+     * The plan's feature bullet points, one per line in the `features`
+     * text field, ready to loop over in a view.
+     *
+     * @return array<int, string>
+     */
+    public function featureList(): array
+    {
+        if (! $this->features) {
+            return [];
+        }
+
+        return collect(preg_split('/\r\n|\r|\n/', $this->features))
+            ->map(fn (string $line) => trim($line))
+            ->filter(fn (string $line) => $line !== '')
+            ->values()
+            ->all();
     }
 }
