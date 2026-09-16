@@ -53,7 +53,37 @@ class PosProductModalTest extends TestCase
             ->assertSet('viewingProductId', null)
             ->assertDispatched('product-added')
             ->assertSet('cart.'.$product->id.'.qty', 3)
-            ->assertDontSeeHtml('wire:click="confirmAddToCart(qty)"');
+            ->assertDontSeeHtml('$wire.confirmAddToCart(qty)');
+    }
+
+    public function test_adding_a_second_product_does_not_remove_the_first_from_the_cart(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $cashier = User::factory()->create(['store_id' => $store->id, 'role' => 'kasir']);
+        $productA = Product::create([
+            'store_id' => $store->id,
+            'name' => 'Nasi Goreng',
+            'price' => 20000,
+            'cost_price' => 10000,
+            'stock_qty' => 10,
+        ]);
+        $productB = Product::create([
+            'store_id' => $store->id,
+            'name' => 'Es Teh',
+            'price' => 5000,
+            'cost_price' => 2000,
+            'stock_qty' => 10,
+        ]);
+
+        Livewire::actingAs($cashier)
+            ->test(Terminal::class)
+            ->call('openProductModal', $productA->id)
+            ->call('confirmAddToCart', 1)
+            ->call('openProductModal', $productB->id)
+            ->call('confirmAddToCart', 1)
+            ->assertSet('cart.'.$productA->id.'.qty', 1)
+            ->assertSet('cart.'.$productB->id.'.qty', 1)
+            ->assertCount('cart', 2);
     }
 
     public function test_modal_quantity_is_capped_by_available_stock(): void

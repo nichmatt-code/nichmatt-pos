@@ -226,7 +226,7 @@
 
             <div class="flex-1 space-y-2 max-h-96 overflow-y-auto">
                 @forelse ($cart as $productId => $item)
-                    <div wire:key="cart-{{ $productId }}" wire:transition
+                    <div wire:key="cart-{{ $productId }}"
                         class="border-b border-slate-100 dark:border-slate-800 pb-2.5">
                         <div class="flex items-center justify-between text-sm">
                             <div class="flex-1 pr-2">
