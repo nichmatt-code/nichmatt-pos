@@ -92,6 +92,14 @@ new class extends Component
             <div class="hidden sm:flex sm:items-center sm:gap-2">
                 <span class="text-sm text-slate-400 dark:text-slate-500 mr-2 truncate max-w-[220px]" title="{{ auth()->user()->store?->name }}">{{ auth()->user()->store?->name }}</span>
 
+                @if ($user->isOwner())
+                    <a href="{{ route('billing.subscribe') }}" wire:navigate
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 mr-1 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-400 hover:to-brand-600 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 {{ request()->routeIs('billing.subscribe') ? 'ring-2 ring-offset-1 ring-brand-400 dark:ring-offset-slate-900' : '' }}">
+                        <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 1.5l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.77l-4.77 2.44.91-5.32-3.87-3.77 5.34-.78L10 1.5z" /></svg>
+                        {{ __('Subscription') }}
+                    </a>
+                @endif
+
                 <x-fullscreen-toggle />
                 <x-theme-toggle />
 
@@ -241,11 +249,6 @@ new class extends Component
                             {{ __('Laporan') }}
                         </x-nav-link>
                     @endif
-                    @if ($user->isOwner())
-                        <x-nav-link :href="route('billing.subscribe')" :active="request()->routeIs('billing.subscribe')" wire:navigate>
-                            {{ __('Langganan') }}
-                        </x-nav-link>
-                    @endif
 
                     @if ($user->isDeveloper())
                         @php $inDeveloper = request()->routeIs('developer.*'); @endphp
@@ -277,6 +280,14 @@ new class extends Component
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden border-t border-slate-200/70 dark:border-slate-800/70">
         <div class="px-3 pt-3 pb-3 space-y-1">
+            @if ($user->isOwner())
+                <a href="{{ route('billing.subscribe') }}" wire:navigate
+                    class="flex items-center gap-2 px-4 py-2.5 mb-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-brand-700">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 1.5l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.77l-4.77 2.44.91-5.32-3.87-3.77 5.34-.78L10 1.5z" /></svg>
+                    {{ __('Subscription') }}
+                </a>
+            @endif
+
             @if ($user->hasPermission(\App\Permission::Dashboard))
                 <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
@@ -344,11 +355,6 @@ new class extends Component
             @if ($user->hasPermission(\App\Permission::Reports))
                 <x-responsive-nav-link :href="route('reports.sales')" :active="request()->routeIs('reports.sales')" wire:navigate>
                     {{ __('Laporan') }}
-                </x-responsive-nav-link>
-            @endif
-            @if ($user->isOwner())
-                <x-responsive-nav-link :href="route('billing.subscribe')" :active="request()->routeIs('billing.subscribe')" wire:navigate>
-                    {{ __('Langganan') }}
                 </x-responsive-nav-link>
             @endif
 
