@@ -11,6 +11,7 @@ use App\Models\Tag;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Picqer\Barcode\BarcodeGeneratorSVG;
 
 class Menu extends Component
 {
@@ -39,6 +40,19 @@ class Menu extends Component
     public function mount(Store $store): void
     {
         $this->store = $store;
+    }
+
+    /**
+     * A Code-128 barcode of the confirmed order code, scannable by the
+     * cashier's barcode gun at checkout instead of typing it in.
+     */
+    public function getConfirmedCodeBarcodeProperty(): ?string
+    {
+        if (! $this->confirmedCode) {
+            return null;
+        }
+
+        return (new BarcodeGeneratorSVG)->getBarcode($this->confirmedCode, BarcodeGeneratorSVG::TYPE_CODE_128, 2, 60);
     }
 
     /**
@@ -73,9 +87,10 @@ class Menu extends Component
     /**
      * The quantity stepper in the product modal is handled entirely
      * client-side (Alpine) so tapping +/- doesn't round-trip to the server;
-     * only the final confirmed quantity is sent here, once.
+     * only the final confirmed quantity (and an optional note) is sent
+     * here, once.
      */
-    public function confirmAddToCart(int $qty = 1): void
+    public function confirmAddToCart(int $qty = 1, string $note = ''): void
     {
         $product = $this->viewingProduct;
 
@@ -87,9 +102,14 @@ class Menu extends Component
 
         $maxQty = $product->is_unlimited_stock ? PHP_INT_MAX : $product->stock_qty;
         $qty = min(max(1, $qty), $maxQty);
+        $note = trim($note);
 
         if (isset($this->cart[$product->id])) {
             $this->cart[$product->id]['qty'] = min($this->cart[$product->id]['qty'] + $qty, $maxQty);
+
+            if ($note !== '') {
+                $this->cart[$product->id]['note'] = $note;
+            }
         } else {
             $this->cart[$product->id] = [
                 'product_id' => $product->id,
@@ -97,7 +117,7 @@ class Menu extends Component
                 'price' => $product->price,
                 'qty' => $qty,
                 'max_qty' => $maxQty,
-                'note' => '',
+                'note' => $note,
             ];
         }
 

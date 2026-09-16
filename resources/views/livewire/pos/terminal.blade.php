@@ -2,15 +2,25 @@
     class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Product picker -->
     <div class="lg:col-span-2 space-y-4">
-        <div class="relative">
-            <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-500 dark:text-brand-400"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M4 6h.01M4 12h.01M4 18h.01M8 6h1m-1 6h1m-1 6h1m4-18v18m4-18v6m0 6v6" />
-            </svg>
-            <input wire:model="barcodeInput" wire:keydown.enter.prevent="scanBarcode" type="text" autofocus
-                placeholder="Scan barcode produk..."
-                class="w-full pl-10 border-slate-200 focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-500" />
+        <div class="flex gap-2">
+            <div class="relative flex-1">
+                <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-500 dark:text-brand-400"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M4 6h.01M4 12h.01M4 18h.01M8 6h1m-1 6h1m-1 6h1m4-18v18m4-18v6m0 6v6" />
+                </svg>
+                <input wire:model="barcodeInput" wire:keydown.enter.prevent="scanBarcode" type="text" autofocus
+                    placeholder="Scan barcode produk..."
+                    class="w-full pl-10 border-slate-200 focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-500" />
+            </div>
+            <a href="{{ route('self-order.qr') }}" target="_blank" title="{{ __('QR Self Order') }}"
+                class="shrink-0 inline-flex items-center justify-center w-11 rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-brand-300 hover:text-brand-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400 dark:hover:text-brand-400 transition">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3.75 4.5A.75.75 0 014.5 3.75h4.5a.75.75 0 01.75.75v4.5a.75.75 0 01-.75.75h-4.5a.75.75 0 01-.75-.75v-4.5zM3.75 15a.75.75 0 01.75-.75h4.5a.75.75 0 01.75.75v4.5a.75.75 0 01-.75.75h-4.5A.75.75 0 013.75 19.5V15zM14.25 4.5a.75.75 0 01.75-.75h4.5a.75.75 0 01.75.75v4.5a.75.75 0 01-.75.75h-4.5a.75.75 0 01-.75-.75v-4.5z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6.75h1.5v1.5H6v-1.5zM6 17.25h1.5v1.5H6v-1.5zM16.5 6.75H18v1.5h-1.5v-1.5zM14.25 14.25h2.25v2.25M14.25 19.5h2.25M19.5 14.25v2.25M19.5 19.5v.01M17.25 17.25h.01M14.25 17.25h.01" />
+                </svg>
+            </a>
         </div>
         @error('barcodeInput')
             <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p>
@@ -346,7 +356,7 @@
     @if ($viewingProductId && $this->viewingProduct)
         @php $viewingProduct = $this->viewingProduct; @endphp
         <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6"
-            x-data="{ qty: 1, max: {{ $viewingProduct->is_unlimited_stock ? 'Infinity' : max(1, (int) $viewingProduct->stock_qty) }} }">
+            x-data="{ qty: 1, note: '', max: {{ $viewingProduct->is_unlimited_stock ? 'Infinity' : max(1, (int) $viewingProduct->stock_qty) }} }">
             <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal"></div>
             <div
                 class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
@@ -371,11 +381,17 @@
                             class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">+</button>
                     </div>
 
+                    <div class="mt-4">
+                        <x-input-label for="modalNote" value="Catatan (opsional)" />
+                        <input x-model="note" id="modalNote" type="text" placeholder="mis. tanpa gula, pedas level 2"
+                            class="mt-1 block w-full border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500" />
+                    </div>
+
                     <div class="mt-6 flex justify-end gap-3">
                         <button type="button" wire:click="closeProductModal" wire:loading.attr="disabled"
                             wire:target="confirmAddToCart"
                             class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 disabled:opacity-40">{{ __('Batal') }}</button>
-                        <x-primary-button type="button" x-on:click="$wire.confirmAddToCart(qty)" wire:loading.attr="disabled"
+                        <x-primary-button type="button" x-on:click="$wire.confirmAddToCart(qty, note)" wire:loading.attr="disabled"
                             wire:target="confirmAddToCart">
                             <span wire:loading.remove wire:target="confirmAddToCart">{{ __('Tambahkan') }}</span>
                             <span wire:loading wire:target="confirmAddToCart">{{ __('Menambahkan...') }}</span>

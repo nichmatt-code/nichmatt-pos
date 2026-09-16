@@ -3,6 +3,8 @@
 use App\Http\Controllers\MidtransNotificationController;
 use App\Http\Controllers\PosBillController;
 use App\Http\Controllers\ProductLabelController;
+use App\Http\Controllers\SelfOrderQrController;
+use App\Http\Controllers\SelfOrderQrDownloadController;
 use App\Http\Controllers\TransactionReceiptController;
 use App\Models\StockOpname;
 use App\Models\Store;
@@ -31,6 +33,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('pos/bill', PosBillController::class)->name('pos.bill');
         Route::get('transactions/{transaction}/receipt', TransactionReceiptController::class)
             ->name('transactions.receipt');
+        Route::get('self-order-qr', SelfOrderQrController::class)->name('self-order.qr');
+        Route::get('self-order-qr/download', SelfOrderQrDownloadController::class)->name('self-order.qr.download');
 
         Route::view('products', 'products.index')->name('products.index')
             ->middleware('permission:products');

@@ -200,6 +200,9 @@
             <button type="button" x-on:click="navigator.clipboard.writeText('{{ $store->selfOrderUrl() }}')" class="shrink-0 inline-flex items-center justify-center px-4 py-2.5 bg-white border border-slate-200 rounded-lg font-medium text-sm text-slate-700 shadow-sm hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700">
                 {{ __('Salin Link') }}
             </button>
+            <a href="{{ route('self-order.qr') }}" target="_blank" class="shrink-0 inline-flex items-center justify-center px-4 py-2.5 bg-brand-600 rounded-lg font-medium text-sm text-white shadow-sm hover:bg-brand-700 transition">
+                {{ __('Lihat QR') }}
+            </a>
         </div>
     </div>
 </div>

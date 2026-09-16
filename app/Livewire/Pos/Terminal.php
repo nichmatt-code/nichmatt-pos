@@ -96,9 +96,10 @@ class Terminal extends Component
     /**
      * The quantity stepper in the product modal is handled entirely
      * client-side (Alpine) so tapping +/- doesn't round-trip to the server;
-     * only the final confirmed quantity is sent here, once.
+     * only the final confirmed quantity (and an optional note) is sent
+     * here, once.
      */
-    public function confirmAddToCart(int $qty = 1): void
+    public function confirmAddToCart(int $qty = 1, string $note = ''): void
     {
         $product = $this->viewingProduct;
 
@@ -108,19 +109,23 @@ class Terminal extends Component
             return;
         }
 
-        $this->addQtyToCart($product, max(1, $qty));
+        $this->addQtyToCart($product, max(1, $qty), trim($note));
 
         $this->dispatch('product-added', message: "{$product->name} ditambahkan ke keranjang.");
         $this->closeProductModal();
     }
 
-    private function addQtyToCart(Product $product, int $qty): void
+    private function addQtyToCart(Product $product, int $qty, string $note = ''): void
     {
         $maxQty = $product->is_unlimited_stock ? PHP_INT_MAX : $product->stock_qty;
         $qty = min($qty, $maxQty);
 
         if (isset($this->cart[$product->id])) {
             $this->cart[$product->id]['qty'] = min($this->cart[$product->id]['qty'] + $qty, $maxQty);
+
+            if ($note !== '') {
+                $this->cart[$product->id]['note'] = $note;
+            }
         } else {
             $this->cart[$product->id] = [
                 'product_id' => $product->id,
@@ -129,7 +134,7 @@ class Terminal extends Component
                 'cost_price' => $product->cost_price,
                 'qty' => $qty,
                 'max_qty' => $maxQty,
-                'note' => '',
+                'note' => $note,
                 'unlimited' => $product->is_unlimited_stock,
             ];
         }

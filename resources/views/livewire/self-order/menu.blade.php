@@ -11,6 +11,10 @@
             <div class="mt-6 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl py-6">
                 <p class="text-xs uppercase tracking-widest text-slate-400 dark:text-slate-500">{{ __('Kode Pesanan') }}</p>
                 <p class="mt-2 text-4xl font-bold tracking-[0.3em] text-brand-600 dark:text-brand-400">{{ $confirmedCode }}</p>
+                @if ($this->confirmedCodeBarcode)
+                    <div class="mt-3 bg-white p-2 inline-block rounded-lg">{!! $this->confirmedCodeBarcode !!}</div>
+                    <p class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">{{ __('Bisa langsung di-scan pakai barcode scanner di kasir.') }}</p>
+                @endif
             </div>
 
             <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">{{ __('Total') }}: <span class="font-semibold text-slate-900 dark:text-slate-100">Rp {{ number_format($confirmedTotal, 0, ',', '.') }}</span></p>
@@ -183,7 +187,7 @@
     @if ($viewingProductId && $this->viewingProduct)
         @php $viewingProduct = $this->viewingProduct; @endphp
         <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6"
-            x-data="{ qty: 1, max: {{ $viewingProduct->is_unlimited_stock ? 'Infinity' : max(1, (int) $viewingProduct->stock_qty) }} }">
+            x-data="{ qty: 1, note: '', max: {{ $viewingProduct->is_unlimited_stock ? 'Infinity' : max(1, (int) $viewingProduct->stock_qty) }} }">
             <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal"></div>
             <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
                 <x-product-thumb :product="$viewingProduct" class="h-40 w-full rounded-none" />
@@ -201,9 +205,14 @@
                         <button type="button" x-on:click="qty = Math.min(max, qty + 1)" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">+</button>
                     </div>
 
+                    <div class="mt-4">
+                        <x-input-label for="modalNote" value="Catatan (opsional)" />
+                        <input x-model="note" id="modalNote" type="text" placeholder="mis. tanpa gula, pedas level 2" class="mt-1 block w-full border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500" />
+                    </div>
+
                     <div class="mt-6 flex justify-end gap-3">
                         <button type="button" wire:click="closeProductModal" wire:loading.attr="disabled" wire:target="confirmAddToCart" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 disabled:opacity-40">{{ __('Batal') }}</button>
-                        <x-primary-button type="button" x-on:click="$wire.confirmAddToCart(qty)" wire:loading.attr="disabled" wire:target="confirmAddToCart">
+                        <x-primary-button type="button" x-on:click="$wire.confirmAddToCart(qty, note)" wire:loading.attr="disabled" wire:target="confirmAddToCart">
                             <span wire:loading.remove wire:target="confirmAddToCart">{{ __('Tambahkan') }}</span>
                             <span wire:loading wire:target="confirmAddToCart">{{ __('Menambahkan...') }}</span>
                         </x-primary-button>

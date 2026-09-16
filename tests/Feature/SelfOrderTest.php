@@ -57,6 +57,7 @@ class SelfOrderTest extends TestCase
         $this->assertSame(18000, $selfOrder->total);
         $this->assertTrue($selfOrder->isPending());
         $component->assertSet('confirmedCode', $selfOrder->code);
+        $component->assertSee('<svg', false);
     }
 
     public function test_confirming_an_empty_cart_shows_an_error(): void

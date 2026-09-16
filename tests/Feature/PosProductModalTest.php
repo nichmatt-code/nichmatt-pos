@@ -56,6 +56,47 @@ class PosProductModalTest extends TestCase
             ->assertDontSeeHtml('$wire.confirmAddToCart(qty)');
     }
 
+    public function test_confirming_the_modal_with_a_note_stores_it_on_the_cart_item(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $cashier = User::factory()->create(['store_id' => $store->id, 'role' => 'kasir']);
+        $product = Product::create([
+            'store_id' => $store->id,
+            'name' => 'Nasi Goreng',
+            'price' => 20000,
+            'cost_price' => 10000,
+            'stock_qty' => 10,
+        ]);
+
+        Livewire::actingAs($cashier)
+            ->test(Terminal::class)
+            ->call('openProductModal', $product->id)
+            ->call('confirmAddToCart', 1, 'tanpa pedas')
+            ->assertSet('cart.'.$product->id.'.note', 'tanpa pedas');
+    }
+
+    public function test_adding_more_of_the_same_item_without_a_new_note_keeps_the_existing_note(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $cashier = User::factory()->create(['store_id' => $store->id, 'role' => 'kasir']);
+        $product = Product::create([
+            'store_id' => $store->id,
+            'name' => 'Nasi Goreng',
+            'price' => 20000,
+            'cost_price' => 10000,
+            'stock_qty' => 10,
+        ]);
+
+        Livewire::actingAs($cashier)
+            ->test(Terminal::class)
+            ->call('openProductModal', $product->id)
+            ->call('confirmAddToCart', 1, 'tanpa pedas')
+            ->call('openProductModal', $product->id)
+            ->call('confirmAddToCart', 1)
+            ->assertSet('cart.'.$product->id.'.qty', 2)
+            ->assertSet('cart.'.$product->id.'.note', 'tanpa pedas');
+    }
+
     public function test_adding_a_second_product_does_not_remove_the_first_from_the_cart(): void
     {
         $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
