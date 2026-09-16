@@ -26,6 +26,13 @@ class MidtransQrisGateway implements MidtransQrisGatewayContract
                 'order_id' => $orderId,
                 'gross_amount' => $amount,
             ],
+            // Without an explicit acquirer, Midtrans can route to a QRIS
+            // channel that isn't active by default (surfaced as a 402
+            // "Payment is not activated" error) - gopay is the acquirer
+            // active by default on every sandbox AND production account.
+            'qris' => [
+                'acquirer' => 'gopay',
+            ],
         ]);
     }
 
