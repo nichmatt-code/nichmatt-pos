@@ -100,7 +100,7 @@ class ProductAvailabilityTest extends TestCase
         $product = Product::create(['store_id' => $store->id, 'name' => 'Kopi Susu', 'price' => 18000, 'cost_price' => 10000, 'stock_qty' => 20, 'is_out_of_stock' => true]);
 
         Livewire::test(Menu::class, ['store' => $store])
-            ->call('addToCart', $product->id)
+            ->call('openProductModal', $product->id)
             ->assertHasErrors('cart');
     }
 
@@ -117,7 +117,8 @@ class ProductAvailabilityTest extends TestCase
         ]);
 
         Livewire::test(Menu::class, ['store' => $store])
-            ->call('addToCart', $product->id)
+            ->call('openProductModal', $product->id)
+            ->call('confirmAddToCart')
             ->assertHasNoErrors('cart');
     }
 

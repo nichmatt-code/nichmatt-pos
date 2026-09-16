@@ -43,7 +43,8 @@ class SelfOrderTest extends TestCase
         ]);
 
         $component = Livewire::test(Menu::class, ['store' => $store])
-            ->call('addToCart', $product->id)
+            ->call('openProductModal', $product->id)
+            ->call('confirmAddToCart')
             ->set('customerName', 'Budi')
             ->set('orderNote', 'Meja 5')
             ->call('confirmOrder')
@@ -95,7 +96,8 @@ class SelfOrderTest extends TestCase
         ]);
 
         $menu = Livewire::test(Menu::class, ['store' => $store])
-            ->call('addToCart', $product->id)
+            ->call('openProductModal', $product->id)
+            ->call('confirmAddToCart')
             ->set('customerName', 'Budi')
             ->call('confirmOrder');
 
@@ -133,7 +135,8 @@ class SelfOrderTest extends TestCase
         $product = Product::create(['store_id' => $storeB->id, 'name' => 'Produk B', 'price' => 1000, 'cost_price' => 500, 'stock_qty' => 5]);
 
         $menu = Livewire::test(Menu::class, ['store' => $storeB])
-            ->call('addToCart', $product->id)
+            ->call('openProductModal', $product->id)
+            ->call('confirmAddToCart')
             ->call('confirmOrder');
 
         Livewire::actingAs($cashierA)
@@ -156,7 +159,8 @@ class SelfOrderTest extends TestCase
         ]);
 
         $menu = Livewire::test(Menu::class, ['store' => $store])
-            ->call('addToCart', $product->id)
+            ->call('openProductModal', $product->id)
+            ->call('confirmAddToCart')
             ->call('confirmOrder');
 
         $code = $menu->get('confirmedCode');

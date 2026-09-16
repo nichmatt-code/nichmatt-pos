@@ -3,6 +3,7 @@
 namespace App\Livewire\Pos;
 
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\SelfOrder;
@@ -11,6 +12,7 @@ use App\Models\Tag;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -31,6 +33,8 @@ class Terminal extends Component
 
     public string $customerName = '';
 
+    public ?int $selectedCustomerId = null;
+
     public string $orderNote = '';
 
     public string $orderCodeInput = '';
@@ -45,6 +49,10 @@ class Terminal extends Component
 
     public ?int $lastTransactionId = null;
 
+    public ?int $viewingProductId = null;
+
+    public int $modalQty = 1;
+
     public function addToCart(int $productId): void
     {
         $product = Product::query()->where('is_active', true)->findOrFail($productId);
@@ -55,18 +63,87 @@ class Terminal extends Component
             return;
         }
 
-        if (isset($this->cart[$productId])) {
-            if ($this->cart[$productId]['qty'] < $this->cart[$productId]['max_qty']) {
-                $this->cart[$productId]['qty']++;
-            }
+        $this->addQtyToCart($product, 1);
+    }
+
+    /**
+     * Open the mini detail modal for a product so the cashier can review its
+     * description and confirm a quantity before it's added to the cart,
+     * rather than a bare tap silently adding one unit.
+     */
+    public function openProductModal(int $productId): void
+    {
+        $product = Product::query()->where('is_active', true)->findOrFail($productId);
+
+        if (! $product->isAvailable()) {
+            $this->addError('cart', "Stok {$product->name} habis.");
+
+            return;
+        }
+
+        $this->viewingProductId = $productId;
+        $this->modalQty = 1;
+    }
+
+    public function closeProductModal(): void
+    {
+        $this->viewingProductId = null;
+        $this->modalQty = 1;
+    }
+
+    public function incrementModalQty(): void
+    {
+        $product = $this->viewingProduct;
+        $maxQty = $product && $product->is_unlimited_stock ? PHP_INT_MAX : $product?->stock_qty ?? 1;
+
+        if ($this->modalQty < $maxQty) {
+            $this->modalQty++;
+        }
+    }
+
+    public function decrementModalQty(): void
+    {
+        if ($this->modalQty > 1) {
+            $this->modalQty--;
+        }
+    }
+
+    public function getViewingProductProperty(): ?Product
+    {
+        return $this->viewingProductId ? Product::find($this->viewingProductId) : null;
+    }
+
+    public function confirmAddToCart(): void
+    {
+        $product = $this->viewingProduct;
+
+        if (! $product || ! $product->isAvailable()) {
+            $this->closeProductModal();
+
+            return;
+        }
+
+        $this->addQtyToCart($product, $this->modalQty);
+
+        $this->dispatch('product-added', message: "{$product->name} ditambahkan ke keranjang.");
+        $this->closeProductModal();
+    }
+
+    private function addQtyToCart(Product $product, int $qty): void
+    {
+        $maxQty = $product->is_unlimited_stock ? PHP_INT_MAX : $product->stock_qty;
+        $qty = min($qty, $maxQty);
+
+        if (isset($this->cart[$product->id])) {
+            $this->cart[$product->id]['qty'] = min($this->cart[$product->id]['qty'] + $qty, $maxQty);
         } else {
-            $this->cart[$productId] = [
+            $this->cart[$product->id] = [
                 'product_id' => $product->id,
                 'name' => $product->name,
                 'price' => $product->price,
                 'cost_price' => $product->cost_price,
-                'qty' => 1,
-                'max_qty' => $product->is_unlimited_stock ? PHP_INT_MAX : $product->stock_qty,
+                'qty' => $qty,
+                'max_qty' => $maxQty,
                 'note' => '',
                 'unlimited' => $product->is_unlimited_stock,
             ];
@@ -140,6 +217,60 @@ class Terminal extends Component
     }
 
     /**
+     * Suggested existing members matching what's typed in the customer name
+     * field, so the cashier can pick a registered customer instead of
+     * retyping their details. Hidden again once one is actually selected.
+     *
+     * @return Collection<int, Customer>
+     */
+    public function getCustomerMatchesProperty(): Collection
+    {
+        if ($this->selectedCustomerId || trim($this->customerName) === '') {
+            return collect();
+        }
+
+        return Customer::query()
+            ->where(fn ($query) => $query
+                ->where('name', 'like', "%{$this->customerName}%")
+                ->orWhere('phone', 'like', "%{$this->customerName}%")
+            )
+            ->orderBy('name')
+            ->limit(5)
+            ->get();
+    }
+
+    /**
+     * If the name field is edited away from the selected member's name, treat
+     * it as free text again so suggestions reappear.
+     */
+    public function updatedCustomerName(): void
+    {
+        if (! $this->selectedCustomerId) {
+            return;
+        }
+
+        $customer = Customer::find($this->selectedCustomerId);
+
+        if (! $customer || $customer->name !== $this->customerName) {
+            $this->selectedCustomerId = null;
+        }
+    }
+
+    public function selectCustomer(int $customerId): void
+    {
+        $customer = Customer::findOrFail($customerId);
+
+        $this->selectedCustomerId = $customer->id;
+        $this->customerName = $customer->name;
+    }
+
+    public function clearSelectedCustomer(): void
+    {
+        $this->selectedCustomerId = null;
+        $this->customerName = '';
+    }
+
+    /**
      * Pull a customer's self-order into the cart by its short code, so the
      * cashier only needs to confirm payment. The BelongsToStore scope on
      * SelfOrder/Product already keeps this to the cashier's own store.
@@ -197,6 +328,7 @@ class Terminal extends Component
         }
 
         $this->customerName = (string) $selfOrder->customer_name;
+        $this->selectedCustomerId = null;
         $this->orderNote = (string) $selfOrder->note;
         $this->claimedSelfOrderId = $selfOrder->id;
         $this->orderCodeInput = '';
@@ -241,7 +373,7 @@ class Terminal extends Component
 
     public function newTransaction(): void
     {
-        $this->reset(['cart', 'discount', 'paidAmount', 'lastTransactionId', 'customerName', 'orderNote', 'claimedSelfOrderId']);
+        $this->reset(['cart', 'discount', 'paidAmount', 'lastTransactionId', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId']);
         $this->discount = '0';
         $this->paymentMethod = 'cash';
     }
@@ -294,6 +426,7 @@ class Terminal extends Component
             $transaction = Transaction::create([
                 'user_id' => Auth::id(),
                 'self_order_id' => $this->claimedSelfOrderId,
+                'customer_id' => $this->selectedCustomerId,
                 'transaction_no' => 'TRX-'.now()->format('Ymd-His').'-'.random_int(100, 999),
                 'customer_name' => $this->customerName !== '' ? $this->customerName : null,
                 'note' => $this->orderNote !== '' ? $this->orderNote : null,
@@ -354,7 +487,7 @@ class Terminal extends Component
             return $transaction;
         });
 
-        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'orderNote', 'claimedSelfOrderId']);
+        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId']);
         $this->discount = '0';
         $this->lastTransactionId = $transaction->id;
     }

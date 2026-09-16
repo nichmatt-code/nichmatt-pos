@@ -18,6 +18,7 @@ class Transaction extends Model
         'store_id',
         'user_id',
         'self_order_id',
+        'customer_id',
         'transaction_no',
         'customer_name',
         'note',
@@ -61,5 +62,10 @@ class Transaction extends Model
     public function selfOrder(): BelongsTo
     {
         return $this->belongsTo(SelfOrder::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 }

@@ -80,13 +80,14 @@ new class extends Component
                 @php
                     $user = auth()->user();
                     $inOperational = request()->routeIs('pos') || request()->routeIs('preparation.index') || request()->routeIs('stock-opname.*');
-                    $inAdministration = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('inventory.index') || request()->routeIs('team.index') || request()->routeIs('branch.settings');
-                    $hasAdministration = $user->hasPermission(\App\Permission::Products)
+                    $inProduct = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('tags.index') || request()->routeIs('inventory.index');
+                    $inAdministration = request()->routeIs('team.index') || request()->routeIs('branch.settings') || request()->routeIs('customers.index');
+                    $hasProduct = $user->hasPermission(\App\Permission::Products)
                         || $user->hasPermission(\App\Permission::Categories)
-                        || $user->hasPermission(\App\Permission::Inventory)
-                        || $user->hasPermission(\App\Permission::StockOpname)
-                        || $user->hasPermission(\App\Permission::Employees)
-                        || $user->hasPermission(\App\Permission::StoreSettings);
+                        || $user->hasPermission(\App\Permission::Inventory);
+                    $hasAdministration = $user->hasPermission(\App\Permission::Employees)
+                        || $user->hasPermission(\App\Permission::StoreSettings)
+                        || $user->hasPermission(\App\Permission::Customers);
                 @endphp
                 <div class="hidden sm:flex sm:items-center sm:gap-1">
                     @if ($user->hasPermission(\App\Permission::Dashboard))
@@ -95,7 +96,7 @@ new class extends Component
                         </x-nav-link>
                     @endif
 
-                    <x-nav-dropdown label="{{ __('View') }}" :active="$inOperational">
+                    <x-nav-dropdown label="{{ __('Kasir') }}" :active="$inOperational">
                         <x-dropdown-link :href="route('pos')" wire:navigate>
                             {{ __('Kasir') }}
                         </x-dropdown-link>
@@ -111,8 +112,8 @@ new class extends Component
                         @endif
                     </x-nav-dropdown>
 
-                    @if ($hasAdministration)
-                        <x-nav-dropdown label="{{ __('Administrasi') }}" :active="$inAdministration">
+                    @if ($hasProduct)
+                        <x-nav-dropdown label="{{ __('Product') }}" :active="$inProduct">
                             @if ($user->hasPermission(\App\Permission::Products))
                                 <x-dropdown-link :href="route('products.index')" wire:navigate>
                                     {{ __('Produk') }}
@@ -126,6 +127,21 @@ new class extends Component
                             @if ($user->hasPermission(\App\Permission::Inventory))
                                 <x-dropdown-link :href="route('inventory.index')" wire:navigate>
                                     {{ __('Inventory') }}
+                                </x-dropdown-link>
+                            @endif
+                            @if ($user->hasPermission(\App\Permission::Products))
+                                <x-dropdown-link :href="route('tags.index')" wire:navigate>
+                                    {{ __('Tags') }}
+                                </x-dropdown-link>
+                            @endif
+                        </x-nav-dropdown>
+                    @endif
+
+                    @if ($hasAdministration)
+                        <x-nav-dropdown label="{{ __('Administrasi') }}" :active="$inAdministration">
+                            @if ($user->hasPermission(\App\Permission::Customers))
+                                <x-dropdown-link :href="route('customers.index')" wire:navigate>
+                                    {{ __('Pelanggan') }}
                                 </x-dropdown-link>
                             @endif
                             @if ($user->hasPermission(\App\Permission::Employees))
@@ -264,7 +280,7 @@ new class extends Component
                 </x-responsive-nav-link>
             @endif
 
-            <p class="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('View') }}</p>
+            <p class="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('Kasir') }}</p>
             <x-responsive-nav-link :href="route('pos')" :active="request()->routeIs('pos')" wire:navigate>
                 {{ __('Kasir') }}
             </x-responsive-nav-link>
@@ -279,8 +295,8 @@ new class extends Component
                 </x-responsive-nav-link>
             @endif
 
-            @if ($hasAdministration)
-                <p class="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('Administrasi') }}</p>
+            @if ($hasProduct)
+                <p class="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('Product') }}</p>
                 @if ($user->hasPermission(\App\Permission::Products))
                     <x-responsive-nav-link :href="route('products.index')" :active="request()->routeIs('products.index')" wire:navigate>
                         {{ __('Produk') }}
@@ -294,6 +310,20 @@ new class extends Component
                 @if ($user->hasPermission(\App\Permission::Inventory))
                     <x-responsive-nav-link :href="route('inventory.index')" :active="request()->routeIs('inventory.index')" wire:navigate>
                         {{ __('Inventory') }}
+                    </x-responsive-nav-link>
+                @endif
+                @if ($user->hasPermission(\App\Permission::Products))
+                    <x-responsive-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.index')" wire:navigate>
+                        {{ __('Tags') }}
+                    </x-responsive-nav-link>
+                @endif
+            @endif
+
+            @if ($hasAdministration)
+                <p class="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ __('Administrasi') }}</p>
+                @if ($user->hasPermission(\App\Permission::Customers))
+                    <x-responsive-nav-link :href="route('customers.index')" :active="request()->routeIs('customers.index')" wire:navigate>
+                        {{ __('Pelanggan') }}
                     </x-responsive-nav-link>
                 @endif
                 @if ($user->hasPermission(\App\Permission::Employees))

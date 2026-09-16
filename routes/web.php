@@ -39,8 +39,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permission:products');
         Route::view('categories', 'categories.index')->name('categories.index')
             ->middleware('permission:categories');
+        Route::view('tags', 'tags.index')->name('tags.index')
+            ->middleware('permission:products');
         Route::view('inventory', 'inventory.index')->name('inventory.index')
             ->middleware('permission:inventory');
+        Route::view('customers', 'customers.index')->name('customers.index')
+            ->middleware('permission:customers');
         Route::view('stock-opname', 'stock-opname.index')->name('stock-opname.index')
             ->middleware('permission:stock-opname');
         Route::get('stock-opname/{stockOpname}', function (StockOpname $stockOpname) {

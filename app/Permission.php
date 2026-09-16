@@ -13,6 +13,7 @@ enum Permission: string
     case Preparation = 'preparation';
     case Employees = 'employees';
     case StoreSettings = 'store-settings';
+    case Customers = 'customers';
 
     public function label(): string
     {
@@ -26,6 +27,7 @@ enum Permission: string
             self::Preparation => 'Persiapan Pesanan',
             self::Employees => 'Kelola Karyawan',
             self::StoreSettings => 'Pengaturan Cabang',
+            self::Customers => 'Data Pelanggan',
         };
     }
 }

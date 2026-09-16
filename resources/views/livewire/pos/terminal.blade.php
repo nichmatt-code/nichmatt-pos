@@ -159,9 +159,39 @@
             </div>
 
             <div class="space-y-3 mb-3">
-                <div>
-                    <x-input-label for="customerName" value="Nama Customer (opsional)" />
-                    <x-text-input wire:model.blur="customerName" id="customerName" type="text" class="block w-full" placeholder="mis. Budi" />
+                <div class="relative" x-data="{ open: false }">
+                    <x-input-label for="customerName" value="Customer (opsional)" />
+
+                    @if ($selectedCustomerId)
+                        <div class="mt-1 flex items-center justify-between px-3 py-2 rounded-lg bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-900/60">
+                            <span class="text-sm font-medium text-brand-700 dark:text-brand-300">{{ $customerName }}</span>
+                            <button type="button" wire:click="clearSelectedCustomer" class="text-xs text-brand-600 dark:text-brand-400 underline">{{ __('Ganti') }}</button>
+                        </div>
+                    @else
+                        <x-text-input
+                            wire:model.live.debounce.300ms="customerName"
+                            id="customerName"
+                            type="text"
+                            class="block w-full"
+                            placeholder="Cari member atau ketik nama baru"
+                            x-on:focus="open = true"
+                            x-on:blur="setTimeout(() => open = false, 150)"
+                        />
+                        @if ($this->customerMatches->isNotEmpty())
+                            <div x-show="open" class="absolute z-10 mt-1 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden">
+                                @foreach ($this->customerMatches as $match)
+                                    <button
+                                        type="button"
+                                        wire:click="selectCustomer({{ $match->id }})"
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+                                    >
+                                        <div class="font-medium text-slate-900 dark:text-slate-100">{{ $match->name }}</div>
+                                        <div class="text-xs text-slate-400 dark:text-slate-500">{{ $match->phone }}</div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+                    @endif
                 </div>
                 <div>
                     <x-input-label for="orderNote" value="Catatan Order (opsional)" />
@@ -252,4 +282,36 @@
             </div>
         @endif
     </div>
+
+    <!-- Product Detail Modal -->
+    @if ($this->viewingProduct)
+        @php $viewingProduct = $this->viewingProduct; @endphp
+        <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
+            <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal"></div>
+            <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
+                <x-product-thumb :product="$viewingProduct" class="h-40 w-full rounded-none" />
+
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $viewingProduct->name }}</h3>
+                    @if ($viewingProduct->description)
+                        <p class="mt-1.5 text-sm text-slate-500 dark:text-slate-400">{{ $viewingProduct->description }}</p>
+                    @endif
+                    <p class="mt-2 text-lg font-semibold text-brand-600 dark:text-brand-400">Rp {{ number_format($viewingProduct->price, 0, ',', '.') }}</p>
+
+                    <div class="mt-4 flex items-center justify-center gap-4">
+                        <button type="button" wire:click="decrementModalQty" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">-</button>
+                        <span class="w-10 text-center text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $modalQty }}</span>
+                        <button type="button" wire:click="incrementModalQty" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">+</button>
+                    </div>
+
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" wire:click="closeProductModal" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{{ __('Batal') }}</button>
+                        <x-primary-button type="button" wire:click="confirmAddToCart">{{ __('Tambahkan') }}</x-primary-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <x-toast on="product-added" />
 </div>
