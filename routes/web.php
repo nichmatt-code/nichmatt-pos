@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LossRecordReceiptController;
 use App\Http\Controllers\MidtransNotificationController;
 use App\Http\Controllers\PosBillController;
 use App\Http\Controllers\ProductLabelController;
@@ -33,6 +34,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('pos/bill', PosBillController::class)->name('pos.bill');
         Route::get('transactions/{transaction}/receipt', TransactionReceiptController::class)
             ->name('transactions.receipt');
+        Route::get('loss-records/{lossRecord}/receipt', LossRecordReceiptController::class)
+            ->name('loss-records.receipt');
         Route::get('self-order-qr', SelfOrderQrController::class)->name('self-order.qr');
         Route::get('self-order-qr/download', SelfOrderQrDownloadController::class)->name('self-order.qr.download');
 
@@ -55,6 +58,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return view('stock-opname.show', ['stockOpname' => $stockOpname]);
         })->name('stock-opname.show')->middleware('permission:stock-opname');
         Route::view('reports/sales', 'reports.sales')->name('reports.sales')
+            ->middleware('permission:reports');
+        Route::view('reports/stock-opname', 'reports.stock-opname')->name('reports.stock-opname')
             ->middleware('permission:reports');
         Route::view('preparation', 'preparation.index')->name('preparation.index')
             ->middleware('permission:preparation');

@@ -5,6 +5,8 @@ namespace App\Livewire\Pos;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\InventoryMovement;
+use App\Models\LossRecord;
+use App\Models\LossRecordItem;
 use App\Models\Product;
 use App\Models\SelfOrder;
 use App\Models\StockMovement;
@@ -51,6 +53,17 @@ class Terminal extends Component
     public ?int $lastTransactionId = null;
 
     public ?int $viewingProductId = null;
+
+    public bool $showLossModal = false;
+
+    public string $lossSearch = '';
+
+    /** @var array<int, array{product_id: int, name: string, cost_price: int, qty: int}> */
+    public array $lossItems = [];
+
+    public string $lossReason = '';
+
+    public ?int $lastLossRecordId = null;
 
     public function addToCart(int $productId): void
     {
@@ -524,6 +537,165 @@ class Terminal extends Component
         $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId']);
         $this->discount = '0';
         $this->lastTransactionId = $transaction->id;
+    }
+
+    /**
+     * Open the "record a loss" panel, separate from the normal checkout flow
+     * so damaged/dropped items can be written off without being booked as a
+     * sale (no revenue, no customer payment).
+     */
+    public function openLossModal(): void
+    {
+        $this->lossItems = [];
+        $this->lossSearch = '';
+        $this->lossReason = '';
+        $this->showLossModal = true;
+    }
+
+    public function closeLossModal(): void
+    {
+        $this->showLossModal = false;
+    }
+
+    /**
+     * @return Collection<int, Product>
+     */
+    public function getLossSearchResultsProperty(): Collection
+    {
+        if (trim($this->lossSearch) === '') {
+            return collect();
+        }
+
+        return Product::query()
+            ->where('is_active', true)
+            ->where('name', 'like', "%{$this->lossSearch}%")
+            ->limit(5)
+            ->get();
+    }
+
+    public function addLossItem(int $productId): void
+    {
+        $product = Product::findOrFail($productId);
+
+        if (isset($this->lossItems[$productId])) {
+            $this->lossItems[$productId]['qty']++;
+        } else {
+            $this->lossItems[$productId] = [
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'cost_price' => $product->cost_price,
+                'qty' => 1,
+            ];
+        }
+
+        $this->lossSearch = '';
+    }
+
+    public function incrementLossQty(int $productId): void
+    {
+        if (isset($this->lossItems[$productId])) {
+            $this->lossItems[$productId]['qty']++;
+        }
+    }
+
+    public function decrementLossQty(int $productId): void
+    {
+        if (! isset($this->lossItems[$productId])) {
+            return;
+        }
+
+        $this->lossItems[$productId]['qty']--;
+
+        if ($this->lossItems[$productId]['qty'] <= 0) {
+            unset($this->lossItems[$productId]);
+        }
+    }
+
+    public function removeLossItem(int $productId): void
+    {
+        unset($this->lossItems[$productId]);
+    }
+
+    public function getLossTotalCostProperty(): int
+    {
+        return collect($this->lossItems)->sum(fn (array $item) => $item['cost_price'] * $item['qty']);
+    }
+
+    /**
+     * Record a loss (e.g. damaged goods, dropped food): deducts stock and
+     * ingredient inventory exactly like a sale would, but creates a
+     * LossRecord instead of a Transaction - no revenue, no customer payment,
+     * and it's kept out of sales reports entirely.
+     */
+    public function submitLoss(): void
+    {
+        $this->validate([
+            'lossReason' => ['required', 'string', 'max:255'],
+        ], attributes: ['lossReason' => 'alasan kerugian']);
+
+        if (empty($this->lossItems)) {
+            $this->addError('lossItems', 'Pilih minimal 1 produk.');
+
+            return;
+        }
+
+        $lossRecord = DB::transaction(function () {
+            $lossRecord = LossRecord::create([
+                'user_id' => Auth::id(),
+                'loss_no' => 'LOSS-'.now()->format('Ymd-His').'-'.random_int(100, 999),
+                'reason' => $this->lossReason,
+                'total_cost_value' => $this->lossTotalCost,
+            ]);
+
+            foreach ($this->lossItems as $item) {
+                LossRecordItem::create([
+                    'loss_record_id' => $lossRecord->id,
+                    'product_id' => $item['product_id'],
+                    'product_name' => $item['name'],
+                    'qty' => $item['qty'],
+                    'cost_price' => $item['cost_price'],
+                    'subtotal_cost' => $item['cost_price'] * $item['qty'],
+                ]);
+
+                $product = Product::with('ingredients')->find($item['product_id']);
+
+                if (! $product) {
+                    continue;
+                }
+
+                if (! $product->is_unlimited_stock) {
+                    $product->decrement('stock_qty', $item['qty']);
+
+                    StockMovement::create([
+                        'product_id' => $item['product_id'],
+                        'user_id' => Auth::id(),
+                        'type' => 'out',
+                        'qty' => -$item['qty'],
+                        'note' => 'Kerugian '.$lossRecord->loss_no,
+                    ]);
+                }
+
+                foreach ($product->ingredients as $ingredient) {
+                    $qtyUsed = $ingredient->pivot->qty_used * $item['qty'];
+
+                    $ingredient->decrement('stock_qty', $qtyUsed);
+
+                    InventoryMovement::create([
+                        'inventory_item_id' => $ingredient->id,
+                        'user_id' => Auth::id(),
+                        'type' => 'out',
+                        'qty' => -$qtyUsed,
+                        'note' => 'Kerugian '.$lossRecord->loss_no,
+                    ]);
+                }
+            }
+
+            return $lossRecord;
+        });
+
+        $this->lastLossRecordId = $lossRecord->id;
+        $this->showLossModal = false;
+        $this->dispatch('loss-ready', lossId: $lossRecord->id);
     }
 
     public function render(): View

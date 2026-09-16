@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <title>Nota Kerugian {{ $lossRecord->loss_no }}</title>
+    <style>
+        @page { margin: 0; }
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            width: 80mm;
+            margin: 0 auto;
+            padding: 8px;
+            color: #000;
+        }
+        h1 { font-size: 14px; margin: 0 0 2px; text-align: center; }
+        .center { text-align: center; }
+        .muted { color: #444; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        td { padding: 2px 0; vertical-align: top; }
+        .line { border-top: 1px dashed #000; margin: 6px 0; }
+        .right { text-align: right; }
+        .totals td { padding: 1px 0; }
+        .badge { text-align: center; font-weight: bold; letter-spacing: 1px; margin: 4px 0; }
+        .print-btn { margin-top: 12px; text-align: center; }
+        @media print {
+            .print-btn { display: none; }
+        }
+    </style>
+</head>
+<body>
+    @if ($lossRecord->store->logoUrl())
+        <div class="center"><img src="{{ $lossRecord->store->logoUrl() }}" alt="{{ $lossRecord->store->name }}" style="max-height: 48px; max-width: 100%;"></div>
+    @endif
+    <h1>{{ $lossRecord->store->name }}</h1>
+
+    <div class="badge">*** NOTA KERUGIAN ***</div>
+
+    <div class="line"></div>
+
+    <div>{{ $lossRecord->loss_no }}</div>
+    <div class="muted">{{ $lossRecord->created_at->format('d/m/Y H:i') }} - Dicatat oleh: {{ $lossRecord->user->name ?? '-' }}</div>
+    <div>Alasan: {{ $lossRecord->reason }}</div>
+
+    <div class="line"></div>
+
+    <table>
+        @foreach ($lossRecord->items as $item)
+            <tr>
+                <td colspan="2">{{ $item->product_name }}</td>
+            </tr>
+            <tr>
+                <td>{{ $item->qty }} x {{ number_format($item->cost_price, 0, ',', '.') }}</td>
+                <td class="right">{{ number_format($item->subtotal_cost, 0, ',', '.') }}</td>
+            </tr>
+        @endforeach
+    </table>
+
+    <div class="line"></div>
+
+    <table class="totals">
+        <tr>
+            <td><strong>Total Nilai Kerugian</strong></td>
+            <td class="right"><strong>{{ number_format($lossRecord->total_cost_value, 0, ',', '.') }}</strong></td>
+        </tr>
+    </table>
+
+    <div class="line"></div>
+
+    <div class="center muted">Dihitung dari harga modal, bukan penjualan</div>
+
+    <div class="print-btn">
+        <button onclick="window.print()">Cetak</button>
+    </div>
+</body>
+</html>

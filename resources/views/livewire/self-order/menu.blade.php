@@ -122,7 +122,7 @@
             </div>
 
             <!-- Cart -->
-            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-card border border-slate-200/70 dark:border-slate-800 p-5 flex flex-col h-fit lg:sticky lg:top-24">
+            <div id="cart-panel" class="bg-white dark:bg-slate-900 rounded-2xl shadow-card border border-slate-200/70 dark:border-slate-800 p-5 flex flex-col h-fit lg:sticky lg:top-24 scroll-mt-6">
                 <h3 class="font-semibold text-slate-900 dark:text-slate-100 mb-3">{{ __('Pesanan Anda') }}</h3>
 
                 <div class="space-y-3 mb-3">
@@ -220,6 +220,23 @@
                 </div>
             </div>
         </div>
+    @endif
+
+    @if (! $confirmedCode && ! empty($cart))
+        <button type="button"
+            x-on:click="document.getElementById('cart-panel').scrollIntoView({ behavior: 'smooth', block: 'start' })"
+            class="lg:hidden fixed bottom-20 inset-x-4 z-30 flex items-center justify-between gap-3 rounded-2xl bg-brand-600 dark:bg-brand-500 text-white shadow-lg px-4 py-3.5">
+            <span class="flex items-center gap-2 text-sm font-semibold">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                </svg>
+                {{ collect($cart)->sum('qty') }} {{ __('item') }}
+            </span>
+            <span class="flex items-center gap-1.5 text-sm font-semibold">
+                {{ __('Lihat Pesanan') }} · Rp {{ number_format($this->subtotal, 0, ',', '.') }}
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+            </span>
+        </button>
     @endif
 
     <x-toast on="product-added" />

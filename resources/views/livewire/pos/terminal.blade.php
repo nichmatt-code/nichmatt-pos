@@ -1,4 +1,5 @@
 <div x-data x-on:bill-ready.window="window.open('{{ route('pos.bill') }}', '_blank')"
+    x-on:loss-ready.window="window.open('{{ url('loss-records') }}/' + $event.detail.lossId + '/receipt', '_blank')"
     class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Product picker -->
     <div class="lg:col-span-2 space-y-4">
@@ -21,6 +22,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 6.75h1.5v1.5H6v-1.5zM6 17.25h1.5v1.5H6v-1.5zM16.5 6.75H18v1.5h-1.5v-1.5zM14.25 14.25h2.25v2.25M14.25 19.5h2.25M19.5 14.25v2.25M19.5 19.5v.01M17.25 17.25h.01M14.25 17.25h.01" />
                 </svg>
             </a>
+            <button type="button" wire:click="openLossModal" title="{{ __('Catat Kerugian') }}"
+                class="shrink-0 inline-flex items-center justify-center w-11 rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-rose-300 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400 dark:hover:text-rose-400 transition">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-8.25 3.75h.008v.008h-.008v-.008z" />
+                </svg>
+            </button>
         </div>
         @error('barcodeInput')
             <p class="text-sm text-rose-600 dark:text-rose-400">{{ $message }}</p>
@@ -135,8 +142,8 @@
     </div>
 
     <!-- Cart / checkout -->
-    <div
-        class="bg-white dark:bg-slate-900 rounded-2xl shadow-card border border-slate-200/70 dark:border-slate-800 p-5 flex flex-col h-fit lg:sticky lg:top-24">
+    <div id="cart-panel"
+        class="bg-white dark:bg-slate-900 rounded-2xl shadow-card border border-slate-200/70 dark:border-slate-800 p-5 flex flex-col h-fit lg:sticky lg:top-24 scroll-mt-24">
         @if ($lastTransaction)
             <div wire:transition class="text-center py-6 space-y-4">
                 <span
@@ -400,6 +407,118 @@
                 </div>
             </div>
         </div>
+    @endif
+
+    <!-- Loss Record Modal -->
+    @if ($showLossModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
+            <div class="fixed inset-0 bg-slate-900/60" wire:click="closeLossModal"></div>
+            <div
+                class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Catat Kerugian') }}</h3>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        {{ __('Untuk barang rusak, makanan jatuh, atau kerugian lain. Stok akan berkurang tanpa tercatat sebagai penjualan.') }}
+                    </p>
+
+                    <div class="mt-4 relative">
+                        <x-input-label for="lossSearch" value="Cari Produk" />
+                        <x-text-input wire:model.live.debounce.300ms="lossSearch" id="lossSearch" type="text"
+                            class="block w-full" placeholder="Ketik nama produk..." autocomplete="off" />
+                        @if ($this->lossSearchResults->isNotEmpty())
+                            <div
+                                class="absolute z-10 mt-1 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden">
+                                @foreach ($this->lossSearchResults as $result)
+                                    <button type="button" wire:click="addLossItem({{ $result->id }})"
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
+                                        <div class="font-medium text-slate-900 dark:text-slate-100">
+                                            {{ $result->name }}</div>
+                                        <div class="text-xs text-slate-400 dark:text-slate-500">Modal: Rp
+                                            {{ number_format($result->cost_price, 0, ',', '.') }}</div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                    <x-input-error :messages="$errors->get('lossItems')" class="mt-2" />
+
+                    <div class="mt-3 space-y-2 max-h-56 overflow-y-auto">
+                        @forelse ($lossItems as $productId => $item)
+                            <div wire:key="loss-item-{{ $productId }}"
+                                class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                                <div class="flex-1">
+                                    <div class="text-sm text-slate-900 dark:text-slate-100">{{ $item['name'] }}</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400">Rp
+                                        {{ number_format($item['cost_price'], 0, ',', '.') }} / {{ __('unit') }}</div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" wire:click="decrementLossQty({{ $productId }})"
+                                        class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm">-</button>
+                                    <span
+                                        class="w-6 text-center text-sm font-medium text-slate-900 dark:text-slate-100">{{ $item['qty'] }}</span>
+                                    <button type="button" wire:click="incrementLossQty({{ $productId }})"
+                                        class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm">+</button>
+                                </div>
+                                <button type="button" wire:click="removeLossItem({{ $productId }})"
+                                    class="text-rose-500 hover:text-rose-700 dark:text-rose-400">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        @empty
+                            <p class="text-sm text-slate-400 dark:text-slate-500 py-3 text-center">
+                                {{ __('Belum ada produk dipilih.') }}</p>
+                        @endforelse
+                    </div>
+
+                    @if (! empty($lossItems))
+                        <div class="mt-2 flex justify-between text-sm font-semibold">
+                            <span class="text-slate-900 dark:text-slate-100">{{ __('Total Nilai Kerugian') }}</span>
+                            <span class="text-rose-600 dark:text-rose-400">Rp
+                                {{ number_format($this->lossTotalCost, 0, ',', '.') }}</span>
+                        </div>
+                    @endif
+
+                    <div class="mt-4">
+                        <x-input-label for="lossReason" value="Alasan" />
+                        <x-text-input wire:model="lossReason" id="lossReason" type="text" class="block w-full"
+                            placeholder="mis. Gelas pecah, ayam jatuh, kadaluarsa" />
+                        <x-input-error :messages="$errors->get('lossReason')" class="mt-1" />
+                    </div>
+
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" wire:click="closeLossModal"
+                            class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{{ __('Batal') }}</button>
+                        <button type="button" wire:click="submitLoss"
+                            wire:confirm="Catat kerugian ini? Stok akan berkurang secara permanen."
+                            wire:loading.attr="disabled" wire:target="submitLoss"
+                            class="inline-flex items-center px-4 py-2.5 bg-rose-600 hover:bg-rose-700 rounded-lg font-medium text-sm text-white shadow-sm transition disabled:opacity-50">
+                            <span wire:loading.remove wire:target="submitLoss">{{ __('Catat & Cetak') }}</span>
+                            <span wire:loading wire:target="submitLoss">{{ __('Menyimpan...') }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (! empty($cart) && ! $lastTransaction)
+        <button type="button"
+            x-on:click="document.getElementById('cart-panel').scrollIntoView({ behavior: 'smooth', block: 'start' })"
+            class="lg:hidden fixed bottom-20 inset-x-4 z-30 flex items-center justify-between gap-3 rounded-2xl bg-brand-600 dark:bg-brand-500 text-white shadow-lg px-4 py-3.5">
+            <span class="flex items-center gap-2 text-sm font-semibold">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                </svg>
+                {{ collect($cart)->sum('qty') }} {{ __('item') }}
+            </span>
+            <span class="flex items-center gap-1.5 text-sm font-semibold">
+                {{ __('Lihat Pesanan') }} · Rp {{ number_format($this->total, 0, ',', '.') }}
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+            </span>
+        </button>
     @endif
 
     <x-toast on="product-added" />
