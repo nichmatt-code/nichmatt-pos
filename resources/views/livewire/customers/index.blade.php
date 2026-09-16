@@ -55,8 +55,8 @@
     <!-- Customer Form Modal -->
     @if ($showFormModal)
     <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
-        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showFormModal', false)" wire:transition.opacity></div>
-        <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
+        <div class="fixed inset-0 bg-slate-900/60" wire:click="$set('showFormModal', false)"></div>
+        <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
         <div class="p-6">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $editingId ? __('Edit Pelanggan') : __('Tambah Pelanggan') }}</h3>
 

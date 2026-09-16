@@ -184,8 +184,8 @@
         @php $viewingProduct = $this->viewingProduct; @endphp
         <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6"
             x-data="{ qty: 1, max: {{ $viewingProduct->is_unlimited_stock ? 'Infinity' : max(1, (int) $viewingProduct->stock_qty) }} }">
-            <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal" wire:transition.opacity></div>
-            <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
+            <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal"></div>
+            <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
                 <x-product-thumb :product="$viewingProduct" class="h-40 w-full rounded-none" />
 
                 <div class="p-6">

@@ -112,8 +112,8 @@
     <!-- Detail Modal -->
     @if ($viewing)
     <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
-        <div class="fixed inset-0 bg-slate-900/60" wire:click="closeDetail" wire:transition.opacity></div>
-        <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
+        <div class="fixed inset-0 bg-slate-900/60" wire:click="closeDetail"></div>
+        <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-md sm:mx-auto">
             <div class="p-6">
                 <div class="flex items-start justify-between gap-3">
                     <div>
