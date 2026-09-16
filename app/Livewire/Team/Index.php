@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Team;
 
+use App\Livewire\Concerns\Sortable;
 use App\Mail\EmployeeInvitationMail;
 use App\Models\EmployeeInvitation;
 use App\Models\User;
@@ -14,6 +15,10 @@ use Livewire\Component;
 
 class Index extends Component
 {
+    use Sortable;
+
+    public string $search = '';
+
     public bool $showInviteModal = false;
 
     public string $inviteEmail = '';
@@ -182,7 +187,14 @@ class Index extends Component
         $store = Auth::user()->store;
 
         return view('livewire.team.index', [
-            'employees' => $store->users()->orderByDesc('role')->orderBy('name')->get(),
+            'employees' => $store->users()
+                ->when($this->search, fn ($query) => $query->where(fn ($q) => $q
+                    ->where('name', 'like', "%{$this->search}%")
+                    ->orWhere('email', 'like', "%{$this->search}%")
+                ))
+                ->orderBy($this->sortField ?: 'role', $this->sortField ? $this->sortDirection : 'desc')
+                ->orderBy('name')
+                ->get(),
             'pendingInvitations' => $store->employeeInvitations()->whereNull('accepted_at')->latest()->get(),
             'permissions' => Permission::cases(),
         ]);

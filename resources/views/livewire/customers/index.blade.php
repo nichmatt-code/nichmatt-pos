@@ -19,10 +19,10 @@
             <table class="min-w-full text-sm">
                 <thead>
                     <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500 bg-slate-50/70 dark:bg-slate-800/40">
-                        <th class="px-6 py-3">{{ __('Nama') }}</th>
+                        <x-th-sort field="name" label="{{ __('Nama') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                         <th class="px-6 py-3">{{ __('No. HP') }}</th>
                         <th class="px-6 py-3">{{ __('Alamat') }}</th>
-                        <th class="px-6 py-3">{{ __('Total Transaksi') }}</th>
+                        <x-th-sort field="transactions_count" label="{{ __('Total Transaksi') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                         <th class="px-6 py-3"></th>
                     </tr>
                 </thead>

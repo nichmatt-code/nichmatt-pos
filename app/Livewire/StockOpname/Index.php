@@ -2,6 +2,7 @@
 
 namespace App\Livewire\StockOpname;
 
+use App\Livewire\Concerns\Sortable;
 use App\Models\InventoryItem;
 use App\Models\Product;
 use App\Models\StockOpname;
@@ -14,13 +15,34 @@ use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithPagination;
+    use Sortable, WithPagination;
 
     public bool $showCreateModal = false;
 
     public string $type = StockOpname::TYPE_PRODUCT;
 
     public string $note = '';
+
+    public string $search = '';
+
+    public string $filterType = 'all';
+
+    public string $filterStatus = 'all';
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterType(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatus(): void
+    {
+        $this->resetPage();
+    }
 
     public function openCreateModal(): void
     {
@@ -89,7 +111,13 @@ class Index extends Component
             'opnames' => StockOpname::query()
                 ->withCount('items')
                 ->with('creator')
-                ->latest()
+                ->when($this->search, fn ($query) => $query->where(fn ($q) => $q
+                    ->where('code', 'like', "%{$this->search}%")
+                    ->orWhere('note', 'like', "%{$this->search}%")
+                ))
+                ->when($this->filterType !== 'all', fn ($query) => $query->where('type', $this->filterType))
+                ->when($this->filterStatus !== 'all', fn ($query) => $query->where('status', $this->filterStatus))
+                ->orderBy($this->sortField ?: 'created_at', $this->sortField ? $this->sortDirection : 'desc')
                 ->paginate(15),
         ]);
     }

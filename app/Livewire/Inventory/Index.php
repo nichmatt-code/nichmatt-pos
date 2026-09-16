@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Inventory;
 
+use App\Livewire\Concerns\Sortable;
 use App\Models\InventoryItem;
 use App\Models\InventoryMovement;
 use Illuminate\Contracts\View\View;
@@ -13,13 +14,15 @@ use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithPagination;
+    use Sortable, WithPagination;
 
     public bool $showFormModal = false;
 
     public bool $showStockModal = false;
 
     public string $search = '';
+
+    public bool $filterLowStockOnly = false;
 
     public ?int $editingId = null;
 
@@ -44,6 +47,11 @@ class Index extends Component
     public string $stockNote = '';
 
     public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterLowStockOnly(): void
     {
         $this->resetPage();
     }
@@ -154,7 +162,8 @@ class Index extends Component
         return view('livewire.inventory.index', [
             'items' => InventoryItem::query()
                 ->when($this->search, fn ($query) => $query->where('name', 'like', "%{$this->search}%"))
-                ->orderBy('name')
+                ->when($this->filterLowStockOnly, fn ($query) => $query->whereColumn('stock_qty', '<=', 'min_stock'))
+                ->orderBy($this->sortField ?: 'name', $this->sortDirection)
                 ->paginate(15),
         ]);
     }

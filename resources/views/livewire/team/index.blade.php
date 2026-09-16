@@ -10,7 +10,7 @@
         </div>
     @endif
 
-    <div class="flex items-center justify-between">
+    <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
             <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ __('Karyawan') }}</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('Kelola siapa yang bisa akses toko Anda dan izin masing-masing.') }}</p>
@@ -21,12 +21,17 @@
         </x-primary-button>
     </div>
 
+    <div class="relative w-full sm:w-72">
+        <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        <x-text-input wire:model.live.debounce.300ms="search" type="text" class="w-full pl-10" placeholder="Cari nama atau email..." />
+    </div>
+
     <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
         <table class="min-w-full text-sm">
             <thead>
                 <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500 bg-slate-50/70 dark:bg-slate-800/40">
-                    <th class="px-6 py-3">{{ __('Nama') }}</th>
-                    <th class="px-6 py-3">{{ __('Role') }}</th>
+                    <x-th-sort field="name" label="{{ __('Nama') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
+                    <x-th-sort field="role" label="{{ __('Role') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                     <th class="px-6 py-3">{{ __('Izin Akses') }}</th>
                     <th class="px-6 py-3">{{ __('Status') }}</th>
                     <th class="px-6 py-3"></th>

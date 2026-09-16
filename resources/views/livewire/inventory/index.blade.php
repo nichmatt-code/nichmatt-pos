@@ -1,8 +1,14 @@
 <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="relative w-full sm:w-72">
-            <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <x-text-input wire:model.live.debounce.300ms="search" type="text" class="w-full pl-10" placeholder="Cari bahan/barang..." />
+        <div class="flex flex-wrap items-center gap-2">
+            <div class="relative w-full sm:w-72">
+                <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <x-text-input wire:model.live.debounce.300ms="search" type="text" class="w-full pl-10" placeholder="Cari bahan/barang..." />
+            </div>
+            <label class="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 cursor-pointer">
+                <input type="checkbox" wire:model.live="filterLowStockOnly" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800">
+                {{ __('Stok menipis saja') }}
+            </label>
         </div>
         <x-primary-button wire:click="createItem">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -15,8 +21,8 @@
             <table class="min-w-full text-sm">
                 <thead>
                     <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500 bg-slate-50/70 dark:bg-slate-800/40">
-                        <th class="px-6 py-3">{{ __('Barang') }}</th>
-                        <th class="px-6 py-3">{{ __('Stok') }}</th>
+                        <x-th-sort field="name" label="{{ __('Barang') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
+                        <x-th-sort field="stock_qty" label="{{ __('Stok') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                         <th class="px-6 py-3">{{ __('Catatan') }}</th>
                         <th class="px-6 py-3"></th>
                     </tr>

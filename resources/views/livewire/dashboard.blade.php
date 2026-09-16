@@ -41,23 +41,40 @@
         @endphp
 
         <div class="mt-4 overflow-x-auto">
-            <svg viewBox="0 0 700 180" class="w-full h-40" preserveAspectRatio="none" role="img" aria-label="{{ __('Grafik penjualan 14 hari terakhir') }}">
-                @foreach ($salesTrend as $i => $day)
-                    @php
-                        $barHeight = $day['total'] > 0 ? max(2, ($day['total'] / $maxTotal) * 150) : 1;
-                        $x = $i * ($barWidth + $gap);
-                        $y = 150 - $barHeight;
-                        $isToday = $day['date']->isToday();
-                    @endphp
-                    <rect x="{{ $x }}" y="{{ $y }}" width="{{ $barWidth }}" height="{{ $barHeight }}" rx="3"
-                        class="{{ $isToday ? 'fill-brand-600 dark:fill-brand-400' : 'fill-brand-200 dark:fill-brand-500/30' }}">
-                        <title>{{ $day['date']->translatedFormat('d M Y') }}: Rp {{ number_format($day['total'], 0, ',', '.') }}</title>
-                    </rect>
-                    <text x="{{ $x + $barWidth / 2 }}" y="170" text-anchor="middle" class="fill-slate-400 dark:fill-slate-500" style="font-size: 9px;">
-                        {{ $day['date']->translatedFormat('d/M') }}
-                    </text>
-                @endforeach
-            </svg>
+            <div class="relative" x-data="{ tooltip: null }" x-on:mouseleave="tooltip = null">
+                <svg viewBox="0 0 700 180" class="w-full h-40" preserveAspectRatio="none" role="img" aria-label="{{ __('Grafik penjualan 14 hari terakhir') }}">
+                    @foreach ($salesTrend as $i => $day)
+                        @php
+                            $barHeight = $day['total'] > 0 ? max(2, ($day['total'] / $maxTotal) * 150) : 1;
+                            $x = $i * ($barWidth + $gap);
+                            $y = 150 - $barHeight;
+                            $isToday = $day['date']->isToday();
+                            $label = $day['date']->translatedFormat('d M Y');
+                            $value = 'Rp '.number_format($day['total'], 0, ',', '.');
+                        @endphp
+                        <rect x="{{ $x }}" y="{{ $y }}" width="{{ $barWidth }}" height="{{ $barHeight }}" rx="3"
+                            class="{{ $isToday ? 'fill-brand-600 dark:fill-brand-400' : 'fill-brand-200 dark:fill-brand-500/30' }} cursor-pointer transition-opacity hover:opacity-75"
+                            x-on:mouseenter="tooltip = {
+                                label: '{{ $label }}',
+                                value: '{{ $value }}',
+                                left: $el.getBoundingClientRect().left - $el.closest('.relative').getBoundingClientRect().left + $el.getBoundingClientRect().width / 2,
+                                top: $el.getBoundingClientRect().top - $el.closest('.relative').getBoundingClientRect().top,
+                            }">
+                            <title>{{ $label }}: {{ $value }}</title>
+                        </rect>
+                        <text x="{{ $x + $barWidth / 2 }}" y="170" text-anchor="middle" class="fill-slate-400 dark:fill-slate-500 pointer-events-none" style="font-size: 9px;">
+                            {{ $day['date']->translatedFormat('d/M') }}
+                        </text>
+                    @endforeach
+                </svg>
+
+                <div x-show="tooltip" x-cloak
+                    class="absolute z-10 -translate-x-1/2 -translate-y-full pointer-events-none rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium px-2.5 py-1.5 shadow-lg whitespace-nowrap"
+                    :style="tooltip ? `left:${tooltip.left}px; top:${tooltip.top - 6}px` : ''">
+                    <div class="text-slate-300 dark:text-slate-600" x-text="tooltip?.label"></div>
+                    <div class="font-semibold" x-text="tooltip?.value"></div>
+                </div>
+            </div>
         </div>
     </div>
 

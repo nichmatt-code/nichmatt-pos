@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Products;
 
+use App\Livewire\Concerns\Sortable;
 use App\Models\Category;
 use App\Models\InventoryItem;
 use App\Models\Product;
@@ -18,13 +19,17 @@ use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithFileUploads, WithPagination;
+    use Sortable, WithFileUploads, WithPagination;
 
     public bool $showFormModal = false;
 
     public bool $showStockModal = false;
 
     public string $search = '';
+
+    public ?int $filterCategoryId = null;
+
+    public string $filterStatus = 'all';
 
     public ?int $editingId = null;
 
@@ -77,6 +82,16 @@ class Index extends Component
     public string $stockNote = '';
 
     public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterCategoryId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatus(): void
     {
         $this->resetPage();
     }
@@ -325,7 +340,13 @@ class Index extends Component
             'products' => Product::query()
                 ->with(['category', 'tags', 'store'])
                 ->when($this->search, fn ($query) => $query->where('name', 'like', "%{$this->search}%"))
-                ->orderBy('name')
+                ->when($this->filterCategoryId, fn ($query) => $query->where('category_id', $this->filterCategoryId))
+                ->when($this->filterStatus === 'out_of_stock', fn ($query) => $query->where('is_out_of_stock', true))
+                ->when($this->filterStatus === 'low_stock', fn ($query) => $query
+                    ->where('is_unlimited_stock', false)
+                    ->where('is_out_of_stock', false)
+                    ->where('stock_qty', '<=', 5))
+                ->orderBy($this->sortField ?: 'name', $this->sortDirection)
                 ->paginate(15),
             'categories' => Category::query()->orderBy('name')->get(),
             'tags' => Tag::query()->orderBy('name')->get(),

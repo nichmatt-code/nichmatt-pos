@@ -57,17 +57,21 @@
         </div>
 
         <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
-            <div class="p-6 pb-0">
+            <div class="p-6 pb-0 flex flex-wrap items-center justify-between gap-3">
                 <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ __('Riwayat Transaksi') }}</h3>
+                <div class="relative w-full sm:w-56">
+                    <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <x-text-input wire:model.live.debounce.300ms="search" type="text" class="w-full pl-9 text-sm" placeholder="Cari no. transaksi/customer..." />
+                </div>
             </div>
-            <div class="p-6 overflow-x-auto max-h-96 overflow-y-auto">
+            <div class="p-6 overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                            <th class="pb-2 pr-4">{{ __('No. Transaksi') }}</th>
+                            <x-th-sort field="transaction_no" label="{{ __('No. Transaksi') }}" :sortField="$sortField" :sortDirection="$sortDirection" class="pb-2 pr-4" />
                             <th class="pb-2 pr-4">{{ __('Customer') }}</th>
-                            <th class="pb-2 pr-4">{{ __('Waktu') }}</th>
-                            <th class="pb-2 pr-4">{{ __('Total') }}</th>
+                            <x-th-sort field="created_at" label="{{ __('Waktu') }}" :sortField="$sortField" :sortDirection="$sortDirection" class="pb-2 pr-4" />
+                            <x-th-sort field="total" label="{{ __('Total') }}" :sortField="$sortField" :sortDirection="$sortDirection" class="pb-2 pr-4" />
                             <th class="pb-2"></th>
                         </tr>
                     </thead>
@@ -91,6 +95,9 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+            <div class="px-6 pb-6">
+                {{ $transactions->links() }}
             </div>
         </div>
     </div>

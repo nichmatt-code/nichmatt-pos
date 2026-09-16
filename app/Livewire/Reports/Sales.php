@@ -2,17 +2,23 @@
 
 namespace App\Livewire\Reports;
 
+use App\Livewire\Concerns\Sortable;
 use App\Models\InventoryMovement;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class Sales extends Component
 {
+    use Sortable, WithPagination;
+
     public string $startDate;
 
     public string $endDate;
+
+    public string $search = '';
 
     public function mount(): void
     {
@@ -20,14 +26,39 @@ class Sales extends Component
         $this->endDate = now()->format('Y-m-d');
     }
 
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStartDate(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingEndDate(): void
+    {
+        $this->resetPage();
+    }
+
     public function render(): View
     {
-        $transactions = Transaction::query()
+        $baseQuery = fn () => Transaction::query()
             ->where('status', 'completed')
             ->whereDate('created_at', '>=', $this->startDate)
-            ->whereDate('created_at', '<=', $this->endDate)
-            ->orderByDesc('created_at')
-            ->get();
+            ->whereDate('created_at', '<=', $this->endDate);
+
+        // Aggregates (best sellers, totals, inventory usage) always reflect the
+        // full date range, independent of the table's own search/pagination.
+        $transactions = $baseQuery()->get();
+
+        $paginatedTransactions = $baseQuery()
+            ->when($this->search, fn ($query) => $query->where(fn ($q) => $q
+                ->where('transaction_no', 'like', "%{$this->search}%")
+                ->orWhere('customer_name', 'like', "%{$this->search}%")
+            ))
+            ->orderBy($this->sortField ?: 'created_at', $this->sortField ? $this->sortDirection : 'desc')
+            ->paginate(15);
 
         $transactionIds = $transactions->pluck('id');
 
@@ -64,7 +95,7 @@ class Sales extends Component
             ->values();
 
         return view('livewire.reports.sales', [
-            'transactions' => $transactions,
+            'transactions' => $paginatedTransactions,
             'totalOmzet' => $transactions->sum('total'),
             'totalTransactions' => $transactions->count(),
             'totalProfit' => $items->sum(fn ($item) => ($item->price - $item->cost_price) * $item->qty),

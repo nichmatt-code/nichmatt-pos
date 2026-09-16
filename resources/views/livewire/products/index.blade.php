@@ -1,12 +1,25 @@
 <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="relative w-full sm:w-72">
-            <svg wire:loading.remove wire:target="search" class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <svg wire:loading wire:target="search" class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-500 dark:text-brand-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-            </svg>
-            <x-text-input wire:model.live.debounce.300ms="search" type="text" class="w-full pl-10" placeholder="Cari produk..." />
+        <div class="flex flex-wrap items-center gap-2">
+            <div class="relative w-full sm:w-64">
+                <svg wire:loading.remove wire:target="search" class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <svg wire:loading wire:target="search" class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-500 dark:text-brand-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <x-text-input wire:model.live.debounce.300ms="search" type="text" class="w-full pl-10" placeholder="Cari produk..." />
+            </div>
+            <select wire:model.live="filterCategoryId" class="border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100">
+                <option value="">{{ __('Semua Kategori') }}</option>
+                @foreach ($categories as $category)
+                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                @endforeach
+            </select>
+            <select wire:model.live="filterStatus" class="border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100">
+                <option value="all">{{ __('Semua Status') }}</option>
+                <option value="low_stock">{{ __('Stok Menipis') }}</option>
+                <option value="out_of_stock">{{ __('Stok Habis') }}</option>
+            </select>
         </div>
         <x-primary-button wire:click="createProduct">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -20,11 +33,11 @@
                 <thead>
                     <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500 bg-slate-50/70 dark:bg-slate-800/40">
                         <th class="px-6 py-3"></th>
-                        <th class="px-6 py-3">{{ __('Produk') }}</th>
+                        <x-th-sort field="name" label="{{ __('Produk') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                         <th class="px-6 py-3">{{ __('Kategori') }}</th>
                         <th class="px-6 py-3">{{ __('Tag') }}</th>
-                        <th class="px-6 py-3">{{ __('Harga Jual') }}</th>
-                        <th class="px-6 py-3">{{ __('Stok') }}</th>
+                        <x-th-sort field="price" label="{{ __('Harga Jual') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
+                        <x-th-sort field="stock_qty" label="{{ __('Stok') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                         <th class="px-6 py-3"></th>
                     </tr>
                 </thead>

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Customers;
 
+use App\Livewire\Concerns\Sortable;
 use App\Models\Customer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +12,7 @@ use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithPagination;
+    use Sortable, WithPagination;
 
     public bool $showFormModal = false;
 
@@ -90,7 +91,7 @@ class Index extends Component
                     ->where('name', 'like', "%{$this->search}%")
                     ->orWhere('phone', 'like', "%{$this->search}%")
                 ))
-                ->orderBy('name')
+                ->orderBy($this->sortField ?: 'name', $this->sortDirection)
                 ->paginate(15),
         ]);
     }
