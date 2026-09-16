@@ -14,3 +14,16 @@
 #nprogress .peg {
     box-shadow: 0 0 10px #2a4ce0, 0 0 5px #2a4ce0 !important;
 }
+
+/* iOS Safari auto-zooms the whole page when a focused form field's text is
+   smaller than 16px. Several inputs (e.g. cart item notes) intentionally
+   use a smaller size for a compact look, which only matters on larger
+   screens - on mobile, force every field to at least 16px so focusing one
+   never triggers that zoom. */
+@media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
