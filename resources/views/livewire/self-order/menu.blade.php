@@ -195,14 +195,17 @@
                     <p class="mt-2 text-lg font-semibold text-brand-600 dark:text-brand-400">Rp {{ number_format($viewingProduct->price, 0, ',', '.') }}</p>
 
                     <div class="mt-4 flex items-center justify-center gap-4">
-                        <button type="button" wire:click="decrementModalQty" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">-</button>
+                        <button type="button" wire:click="decrementModalQty" wire:loading.attr="disabled" wire:target="decrementModalQty,incrementModalQty,confirmAddToCart" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg disabled:opacity-40">-</button>
                         <span class="w-10 text-center text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $modalQty }}</span>
-                        <button type="button" wire:click="incrementModalQty" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">+</button>
+                        <button type="button" wire:click="incrementModalQty" wire:loading.attr="disabled" wire:target="decrementModalQty,incrementModalQty,confirmAddToCart" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg disabled:opacity-40">+</button>
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">
-                        <button type="button" wire:click="closeProductModal" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{{ __('Batal') }}</button>
-                        <x-primary-button type="button" wire:click="confirmAddToCart">{{ __('Tambahkan') }}</x-primary-button>
+                        <button type="button" wire:click="closeProductModal" wire:loading.attr="disabled" wire:target="confirmAddToCart" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 disabled:opacity-40">{{ __('Batal') }}</button>
+                        <x-primary-button type="button" wire:click="confirmAddToCart" wire:loading.attr="disabled" wire:target="confirmAddToCart,incrementModalQty,decrementModalQty">
+                            <span wire:loading.remove wire:target="confirmAddToCart">{{ __('Tambahkan') }}</span>
+                            <span wire:loading wire:target="confirmAddToCart">{{ __('Menambahkan...') }}</span>
+                        </x-primary-button>
                     </div>
                 </div>
             </div>

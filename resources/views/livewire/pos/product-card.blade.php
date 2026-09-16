@@ -1,6 +1,8 @@
 <button
     type="button"
     wire:click="openProductModal({{ $product->id }})"
+    wire:loading.attr="disabled"
+    wire:target="openProductModal"
     @disabled(! $product->isAvailable())
     class="text-left bg-white dark:bg-slate-900 rounded-xl shadow-card p-3 border border-slate-200/70 dark:border-slate-800 hover:border-brand-300 dark:hover:border-brand-600 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition"
 >
