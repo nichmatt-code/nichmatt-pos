@@ -282,6 +282,27 @@ class SubscriptionPlanBillingTest extends TestCase
         $this->assertSame(1, $promo->fresh()->times_redeemed);
     }
 
+    public function test_subscribe_page_offers_a_way_back_to_pos_while_the_store_still_has_access(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Subscribe::class)
+            ->assertSeeHtml(route('pos'))
+            ->assertSee('Kembali ke Kasir');
+    }
+
+    public function test_subscribe_page_hides_the_way_back_to_pos_once_access_has_expired(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->subDay()]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Subscribe::class)
+            ->assertDontSee('Kembali ke Kasir');
+    }
+
     public function test_trial_notice_is_hidden_once_a_store_subscribes_during_its_trial(): void
     {
         $store = Store::factory()->create([

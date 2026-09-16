@@ -116,6 +116,12 @@
             {{ __('Bayar dengan Midtrans') }}
         </x-primary-button>
 
+        @if ($store->hasAccess())
+            <a href="{{ route('pos') }}" wire:navigate class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-sm text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                {{ __('Kembali ke Kasir') }}
+            </a>
+        @endif
+
         <button wire:click="logout" class="text-sm text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
             {{ __('Keluar') }}
         </button>
