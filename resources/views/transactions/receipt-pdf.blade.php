@@ -52,6 +52,9 @@
 <body>
     <div class="header">
         <div>
+            @if ($transaction->store->logoUrl())
+                <img src="{{ $transaction->store->logoUrl() }}" alt="{{ $transaction->store->name }}" style="max-height: 56px; max-width: 200px; margin-bottom: 8px;">
+            @endif
             <p class="store-name">{{ $transaction->store->name }}</p>
             @if ($transaction->store->address)
                 <div class="muted">{{ $transaction->store->address }}</div>

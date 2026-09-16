@@ -5,10 +5,14 @@ namespace App\Livewire\Branch;
 use App\Models\Store;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Settings extends Component
 {
+    use WithFileUploads;
+
     public string $name = '';
 
     public string $address = '';
@@ -16,6 +20,12 @@ class Settings extends Component
     public string $phone = '';
 
     public string $receiptFormat = Store::RECEIPT_FORMAT_THERMAL;
+
+    public mixed $logo = null;
+
+    public ?string $existingLogoUrl = null;
+
+    public bool $removeExistingLogo = false;
 
     public function mount(): void
     {
@@ -25,6 +35,7 @@ class Settings extends Component
         $this->address = (string) $store->address;
         $this->phone = (string) $store->phone;
         $this->receiptFormat = $store->receipt_format;
+        $this->existingLogoUrl = $store->logoUrl();
     }
 
     public function save(): void
@@ -38,6 +49,38 @@ class Settings extends Component
         Auth::user()->store->update($validated);
 
         $this->dispatch('branch-updated');
+    }
+
+    public function removeLogo(): void
+    {
+        $this->logo = null;
+        $this->existingLogoUrl = null;
+        $this->removeExistingLogo = true;
+    }
+
+    public function saveLogo(): void
+    {
+        $this->validate([
+            'logo' => ['nullable', 'image', 'max:2048'],
+        ]);
+
+        $store = Auth::user()->store;
+
+        if ($this->logo) {
+            if ($store->logo_path) {
+                Storage::disk('public')->delete($store->logo_path);
+            }
+            $store->update(['logo_path' => $this->logo->store('logos', 'public')]);
+        } elseif ($this->removeExistingLogo && $store->logo_path) {
+            Storage::disk('public')->delete($store->logo_path);
+            $store->update(['logo_path' => null]);
+        }
+
+        $this->logo = null;
+        $this->removeExistingLogo = false;
+        $this->existingLogoUrl = $store->fresh()->logoUrl();
+
+        $this->dispatch('logo-updated');
     }
 
     public function saveReceiptFormat(): void

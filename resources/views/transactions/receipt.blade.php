@@ -28,6 +28,9 @@
     </style>
 </head>
 <body>
+    @if ($transaction->store->logoUrl())
+        <div class="center"><img src="{{ $transaction->store->logoUrl() }}" alt="{{ $transaction->store->name }}" style="max-height: 48px; max-width: 100%;"></div>
+    @endif
     <h1>{{ $transaction->store->name }}</h1>
     @if ($transaction->store->address)
         <div class="center muted">{{ $transaction->store->address }}</div>

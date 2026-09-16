@@ -65,6 +65,42 @@
     </div>
 
     <div class="mt-6 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Logo Toko') }}</h3>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Ditampilkan di bagian atas bill, struk, dan invoice.') }}</p>
+
+        <form wire:submit="saveLogo" class="mt-4 space-y-4">
+            <div class="flex items-center gap-4">
+                @if ($logo)
+                    <img src="{{ $logo->temporaryUrl() }}" class="h-16 w-16 rounded-lg object-contain border border-slate-200 dark:border-slate-700 bg-white">
+                @elseif ($existingLogoUrl)
+                    <img src="{{ $existingLogoUrl }}" class="h-16 w-16 rounded-lg object-contain border border-slate-200 dark:border-slate-700 bg-white">
+                @else
+                    <span class="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    </span>
+                @endif
+
+                <div class="flex-1">
+                    <input wire:model="logo" type="file" accept="image/*" class="block w-full text-sm text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-500/10 dark:file:text-brand-300 dark:hover:file:bg-brand-500/20" />
+                    <div wire:loading wire:target="logo" class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ __('Mengunggah...') }}</div>
+                    @if ($existingLogoUrl || $logo)
+                        <button type="button" wire:click="removeLogo" class="mt-1 text-xs text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300">{{ __('Hapus logo') }}</button>
+                    @endif
+                </div>
+            </div>
+            <x-input-error :messages="$errors->get('logo')" class="mt-2" />
+
+            <div class="flex items-center gap-4">
+                <x-primary-button type="submit">{{ __('Simpan Logo') }}</x-primary-button>
+
+                <x-action-message class="me-3" on="logo-updated">
+                    {{ __('Tersimpan.') }}
+                </x-action-message>
+            </div>
+        </form>
+    </div>
+
+    <div class="mt-6 bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6 sm:p-8">
         <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Format Struk') }}</h3>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Pilih tata letak struk saat tombol "Cetak Struk" ditekan di kasir maupun laporan.') }}</p>
 

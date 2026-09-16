@@ -35,6 +35,9 @@
     </style>
 </head>
 <body>
+    @if ($store->logoUrl())
+        <div class="center"><img src="{{ $store->logoUrl() }}" alt="{{ $store->name }}" style="max-height: 48px; max-width: 100%;"></div>
+    @endif
     <h1>{{ $store->name }}</h1>
     @if ($store->address)
         <div class="center muted">{{ $store->address }}</div>

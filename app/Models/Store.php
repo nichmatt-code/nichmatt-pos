@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Store extends Model
@@ -24,6 +25,7 @@ class Store extends Model
         'name',
         'address',
         'phone',
+        'logo_path',
         'receipt_format',
         'is_active',
         'order_token',
@@ -168,5 +170,15 @@ class Store extends Model
     public function usesPdfReceipt(): bool
     {
         return $this->receipt_format === self::RECEIPT_FORMAT_PDF;
+    }
+
+    public function logoUrl(): ?string
+    {
+        return $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null;
+    }
+
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
     }
 }

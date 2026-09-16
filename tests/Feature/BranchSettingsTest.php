@@ -6,6 +6,8 @@ use App\Livewire\Branch\Settings;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -82,5 +84,43 @@ class BranchSettingsTest extends TestCase
             ->test(Settings::class)
             ->assertSee('Kedaluwarsa')
             ->assertSee('Masa aktif sudah habis');
+    }
+
+    public function test_owner_can_upload_a_logo_that_appears_on_receipts(): void
+    {
+        Storage::fake('public');
+
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->set('logo', UploadedFile::fake()->image('logo.jpg'))
+            ->call('saveLogo')
+            ->assertHasNoErrors();
+
+        $store->refresh();
+        $this->assertNotNull($store->logo_path);
+        Storage::disk('public')->assertExists($store->logo_path);
+        $this->assertNotNull($store->logoUrl());
+    }
+
+    public function test_removing_the_logo_clears_it_from_storage(): void
+    {
+        Storage::fake('public');
+
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+        $path = UploadedFile::fake()->image('logo.jpg')->store('logos', 'public');
+        $store->update(['logo_path' => $path]);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->call('removeLogo')
+            ->call('saveLogo')
+            ->assertHasNoErrors();
+
+        Storage::disk('public')->assertMissing($path);
+        $this->assertNull($store->fresh()->logo_path);
     }
 }
