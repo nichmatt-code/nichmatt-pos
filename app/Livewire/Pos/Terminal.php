@@ -52,8 +52,6 @@ class Terminal extends Component
 
     public ?int $viewingProductId = null;
 
-    public int $modalQty = 1;
-
     public function addToCart(int $productId): void
     {
         $product = Product::query()->where('is_active', true)->findOrFail($productId);
@@ -83,30 +81,11 @@ class Terminal extends Component
         }
 
         $this->viewingProductId = $productId;
-        $this->modalQty = 1;
     }
 
     public function closeProductModal(): void
     {
         $this->viewingProductId = null;
-        $this->modalQty = 1;
-    }
-
-    public function incrementModalQty(): void
-    {
-        $product = $this->viewingProduct;
-        $maxQty = $product && $product->is_unlimited_stock ? PHP_INT_MAX : $product?->stock_qty ?? 1;
-
-        if ($this->modalQty < $maxQty) {
-            $this->modalQty++;
-        }
-    }
-
-    public function decrementModalQty(): void
-    {
-        if ($this->modalQty > 1) {
-            $this->modalQty--;
-        }
     }
 
     public function getViewingProductProperty(): ?Product
@@ -114,7 +93,12 @@ class Terminal extends Component
         return $this->viewingProductId ? Product::find($this->viewingProductId) : null;
     }
 
-    public function confirmAddToCart(): void
+    /**
+     * The quantity stepper in the product modal is handled entirely
+     * client-side (Alpine) so tapping +/- doesn't round-trip to the server;
+     * only the final confirmed quantity is sent here, once.
+     */
+    public function confirmAddToCart(int $qty = 1): void
     {
         $product = $this->viewingProduct;
 
@@ -124,7 +108,7 @@ class Terminal extends Component
             return;
         }
 
-        $this->addQtyToCart($product, $this->modalQty);
+        $this->addQtyToCart($product, max(1, $qty));
 
         $this->dispatch('product-added', message: "{$product->name} ditambahkan ke keranjang.");
         $this->closeProductModal();

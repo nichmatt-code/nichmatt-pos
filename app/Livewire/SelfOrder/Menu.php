@@ -36,8 +36,6 @@ class Menu extends Component
 
     public ?int $viewingProductId = null;
 
-    public int $modalQty = 1;
-
     public function mount(Store $store): void
     {
         $this->store = $store;
@@ -58,30 +56,11 @@ class Menu extends Component
         }
 
         $this->viewingProductId = $productId;
-        $this->modalQty = 1;
     }
 
     public function closeProductModal(): void
     {
         $this->viewingProductId = null;
-        $this->modalQty = 1;
-    }
-
-    public function incrementModalQty(): void
-    {
-        $product = $this->viewingProduct;
-        $maxQty = $product && $product->is_unlimited_stock ? PHP_INT_MAX : $product?->stock_qty ?? 1;
-
-        if ($this->modalQty < $maxQty) {
-            $this->modalQty++;
-        }
-    }
-
-    public function decrementModalQty(): void
-    {
-        if ($this->modalQty > 1) {
-            $this->modalQty--;
-        }
     }
 
     public function getViewingProductProperty(): ?Product
@@ -91,7 +70,12 @@ class Menu extends Component
             : null;
     }
 
-    public function confirmAddToCart(): void
+    /**
+     * The quantity stepper in the product modal is handled entirely
+     * client-side (Alpine) so tapping +/- doesn't round-trip to the server;
+     * only the final confirmed quantity is sent here, once.
+     */
+    public function confirmAddToCart(int $qty = 1): void
     {
         $product = $this->viewingProduct;
 
@@ -102,7 +86,7 @@ class Menu extends Component
         }
 
         $maxQty = $product->is_unlimited_stock ? PHP_INT_MAX : $product->stock_qty;
-        $qty = min($this->modalQty, $maxQty);
+        $qty = min(max(1, $qty), $maxQty);
 
         if (isset($this->cart[$product->id])) {
             $this->cart[$product->id]['qty'] = min($this->cart[$product->id]['qty'] + $qty, $maxQty);

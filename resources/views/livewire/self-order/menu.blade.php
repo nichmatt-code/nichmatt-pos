@@ -182,7 +182,8 @@
     <!-- Product Detail Modal -->
     @if ($viewingProductId && $this->viewingProduct)
         @php $viewingProduct = $this->viewingProduct; @endphp
-        <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
+        <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6"
+            x-data="{ qty: 1, max: {{ $viewingProduct->is_unlimited_stock ? 'Infinity' : max(1, (int) $viewingProduct->stock_qty) }} }">
             <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal" wire:transition.opacity></div>
             <div wire:transition.scale.origin.top class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
                 <x-product-thumb :product="$viewingProduct" class="h-40 w-full rounded-none" />
@@ -195,14 +196,14 @@
                     <p class="mt-2 text-lg font-semibold text-brand-600 dark:text-brand-400">Rp {{ number_format($viewingProduct->price, 0, ',', '.') }}</p>
 
                     <div class="mt-4 flex items-center justify-center gap-4">
-                        <button type="button" wire:click="decrementModalQty" wire:loading.attr="disabled" wire:target="decrementModalQty,incrementModalQty,confirmAddToCart" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg disabled:opacity-40">-</button>
-                        <span class="w-10 text-center text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $modalQty }}</span>
-                        <button type="button" wire:click="incrementModalQty" wire:loading.attr="disabled" wire:target="decrementModalQty,incrementModalQty,confirmAddToCart" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg disabled:opacity-40">+</button>
+                        <button type="button" x-on:click="qty = Math.max(1, qty - 1)" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">-</button>
+                        <span class="w-10 text-center text-lg font-semibold text-slate-900 dark:text-slate-100" x-text="qty"></span>
+                        <button type="button" x-on:click="qty = Math.min(max, qty + 1)" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">+</button>
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">
                         <button type="button" wire:click="closeProductModal" wire:loading.attr="disabled" wire:target="confirmAddToCart" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 disabled:opacity-40">{{ __('Batal') }}</button>
-                        <x-primary-button type="button" wire:click="confirmAddToCart" wire:loading.attr="disabled" wire:target="confirmAddToCart,incrementModalQty,decrementModalQty">
+                        <x-primary-button type="button" wire:click="confirmAddToCart(qty)" wire:loading.attr="disabled" wire:target="confirmAddToCart">
                             <span wire:loading.remove wire:target="confirmAddToCart">{{ __('Tambahkan') }}</span>
                             <span wire:loading wire:target="confirmAddToCart">{{ __('Menambahkan...') }}</span>
                         </x-primary-button>

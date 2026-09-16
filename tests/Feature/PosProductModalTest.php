@@ -31,7 +31,6 @@ class PosProductModalTest extends TestCase
             ->test(Terminal::class)
             ->call('openProductModal', $product->id)
             ->assertSet('viewingProductId', $product->id)
-            ->assertSet('modalQty', 1)
             ->assertSee('Nasi goreng dengan telur mata sapi dan kerupuk.');
     }
 
@@ -50,14 +49,11 @@ class PosProductModalTest extends TestCase
         Livewire::actingAs($cashier)
             ->test(Terminal::class)
             ->call('openProductModal', $product->id)
-            ->call('incrementModalQty')
-            ->call('incrementModalQty')
-            ->assertSet('modalQty', 3)
-            ->call('confirmAddToCart')
+            ->call('confirmAddToCart', 3)
             ->assertSet('viewingProductId', null)
             ->assertDispatched('product-added')
             ->assertSet('cart.'.$product->id.'.qty', 3)
-            ->assertDontSeeHtml('wire:click="confirmAddToCart"');
+            ->assertDontSeeHtml('wire:click="confirmAddToCart(qty)"');
     }
 
     public function test_modal_quantity_is_capped_by_available_stock(): void
@@ -72,15 +68,11 @@ class PosProductModalTest extends TestCase
             'stock_qty' => 2,
         ]);
 
-        $component = Livewire::actingAs($cashier)
+        Livewire::actingAs($cashier)
             ->test(Terminal::class)
-            ->call('openProductModal', $product->id);
-
-        for ($i = 0; $i < 5; $i++) {
-            $component->call('incrementModalQty');
-        }
-
-        $component->assertSet('modalQty', 2);
+            ->call('openProductModal', $product->id)
+            ->call('confirmAddToCart', 5)
+            ->assertSet('cart.'.$product->id.'.qty', 2);
     }
 
     public function test_opening_an_out_of_stock_product_shows_an_error_instead_of_the_modal(): void
