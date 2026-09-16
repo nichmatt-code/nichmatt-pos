@@ -106,7 +106,7 @@
                 $wire.subscribe().then(() => {
                     if (! $wire.snapToken) { return }
                     snap.pay($wire.snapToken, {
-                        onSuccess() { window.location.reload() },
+                        onSuccess() { window.location.href = '{{ route('branch.settings') }}' },
                         onPending() { window.location.reload() },
                         onError() { alert('{{ __('Pembayaran gagal, silakan coba lagi.') }}') },
                     })
