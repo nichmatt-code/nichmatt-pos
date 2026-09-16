@@ -43,6 +43,31 @@
         </dl>
     </div>
 
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-6">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('Atur Masa Aktif Manual') }}</h3>
+        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Berikan akses ke toko ini tanpa perlu berlangganan lewat Midtrans.') }}</p>
+
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form wire:submit="extend" class="flex items-end gap-2">
+                <div class="flex-1">
+                    <x-input-label for="extendDays" value="Tambah Hari" />
+                    <x-text-input wire:model="extendDays" id="extendDays" type="number" min="1" class="block w-full mt-1" placeholder="mis. 30" />
+                    <x-input-error :messages="$errors->get('extendDays')" class="mt-1" />
+                </div>
+                <x-secondary-button type="submit" class="shrink-0">{{ __('Tambah') }}</x-secondary-button>
+            </form>
+
+            <form wire:submit="setExpiry" class="flex items-end gap-2">
+                <div class="flex-1">
+                    <x-input-label for="customExpiryDate" value="Set Tanggal Berakhir" />
+                    <input wire:model="customExpiryDate" id="customExpiryDate" type="date" class="block w-full mt-1 border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100" />
+                    <x-input-error :messages="$errors->get('customExpiryDate')" class="mt-1" />
+                </div>
+                <x-secondary-button type="submit" class="shrink-0">{{ __('Set') }}</x-secondary-button>
+            </form>
+        </div>
+    </div>
+
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl p-5">
             <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">{{ __('Produk') }}</div>

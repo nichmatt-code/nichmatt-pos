@@ -11,13 +11,13 @@
 
         <h1 class="mt-4 text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">{{ __('Berlangganan NichmattPOS') }}</h1>
 
-        @if ($store->onTrial())
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                {{ __('Masa trial toko :name masih tersisa :days hari.', ['name' => $store->name, 'days' => $store->trialDaysLeft()]) }}
-            </p>
-        @elseif ($store->subscriptionActive())
+        @if ($store->subscriptionActive())
             <p class="mt-2 text-sm text-emerald-600 dark:text-emerald-400 font-medium">
                 {{ __('Langganan aktif hingga :date.', ['date' => $store->subscription_ends_at->translatedFormat('d F Y')]) }}
+            </p>
+        @elseif ($store->onTrial())
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                {{ __('Masa trial toko :name masih tersisa :days hari. Anda bisa berlangganan kapan saja, tidak perlu menunggu trial habis.', ['name' => $store->name, 'days' => $store->trialDaysLeft()]) }}
             </p>
         @else
             <p class="mt-2 text-sm text-rose-600 dark:text-rose-400 font-medium">
@@ -26,13 +26,51 @@
         @endif
     </div>
 
-    <div class="mt-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 p-5">
+    <div class="mt-6 grid grid-cols-1 {{ $plans->count() > 1 ? 'sm:grid-cols-2' : '' }} gap-3">
+        @foreach ($plans as $plan)
+            <button
+                type="button"
+                wire:click="selectPlan({{ $plan->id }})"
+                class="text-left rounded-2xl border p-4 transition {{ $selectedPlanId === $plan->id ? 'border-brand-400 bg-brand-50/60 dark:border-brand-600 dark:bg-brand-500/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-600' }}"
+            >
+                <p class="font-medium text-slate-900 dark:text-slate-100">{{ $plan->name }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{{ __(':days hari', ['days' => $plan->duration_days]) }}</p>
+
+                <div class="mt-2">
+                    @if ($plan->hasActivePromo())
+                        <span class="text-xs text-slate-400 dark:text-slate-500 line-through">Rp {{ number_format($plan->price, 0, ',', '.') }}</span>
+                        <p class="text-lg font-semibold text-brand-600 dark:text-brand-400">Rp {{ number_format($plan->promo_price, 0, ',', '.') }}</p>
+                        @if ($plan->promo_label)
+                            <span class="inline-flex mt-1 items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{{ $plan->promo_label }}</span>
+                        @endif
+                    @else
+                        <p class="text-lg font-semibold text-brand-600 dark:text-brand-400">Rp {{ number_format($plan->price, 0, ',', '.') }}</p>
+                    @endif
+                </div>
+            </button>
+        @endforeach
+    </div>
+
+    <div class="mt-4">
+        <x-input-label for="promoCodeInput" value="Kode Promo (opsional)" />
+        <div class="mt-1.5 flex gap-2">
+            @if ($this->appliedPromoCode)
+                <div class="flex-1 flex items-center justify-between px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-900/60">
+                    <span class="text-sm font-medium text-emerald-700 dark:text-emerald-400">{{ $this->appliedPromoCode->code }} {{ __('diterapkan') }}</span>
+                    <button type="button" wire:click="removePromoCode" class="text-xs text-emerald-600 dark:text-emerald-400 underline">{{ __('Hapus') }}</button>
+                </div>
+            @else
+                <x-text-input wire:model="promoCodeInput" id="promoCodeInput" type="text" class="block w-full uppercase" placeholder="mis. HEMAT10" />
+                <x-secondary-button type="button" wire:click="applyPromoCode" class="shrink-0">{{ __('Terapkan') }}</x-secondary-button>
+            @endif
+        </div>
+        <x-input-error :messages="$errors->get('promoCodeInput')" class="mt-2" />
+    </div>
+
+    <div class="mt-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 p-5">
         <div class="flex items-center justify-between">
-            <div>
-                <p class="font-medium text-slate-900 dark:text-slate-100">{{ __('Langganan Bulanan') }}</p>
-                <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('Akses penuh semua fitur, per toko') }}</p>
-            </div>
-            <p class="text-xl font-semibold text-brand-600 dark:text-brand-400">Rp {{ number_format(\App\Models\Store::SUBSCRIPTION_MONTHLY_PRICE, 0, ',', '.') }}</p>
+            <p class="font-medium text-slate-900 dark:text-slate-100">{{ __('Total Bayar') }}</p>
+            <p class="text-xl font-semibold text-brand-600 dark:text-brand-400">Rp {{ number_format($this->finalPrice, 0, ',', '.') }}</p>
         </div>
     </div>
 
@@ -49,6 +87,7 @@
             x-data
             x-on:click="
                 $wire.subscribe().then(() => {
+                    if (! $wire.snapToken) { return }
                     snap.pay($wire.snapToken, {
                         onSuccess() { window.location.reload() },
                         onPending() { window.location.reload() },

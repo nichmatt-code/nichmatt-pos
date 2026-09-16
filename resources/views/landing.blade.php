@@ -172,53 +172,71 @@
         </section>
 
         <!-- Pricing -->
-        <section id="harga" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <section id="harga" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div class="text-center max-w-xl mx-auto">
-                <h2 class="text-3xl font-bold text-slate-900 tracking-tight">{{ __('Satu harga, semua fitur') }}</h2>
+                <h2 class="text-3xl font-bold text-slate-900 tracking-tight">{{ __('Pilih paket sesuai kebutuhan') }}</h2>
                 <p class="mt-3 text-slate-500">{{ __('Tidak ada paket rumit. Coba dulu gratis, berlangganan kalau sudah cocok.') }}</p>
             </div>
 
-            <div class="mt-10 bg-white border border-slate-200/70 shadow-soft rounded-2xl p-8 sm:p-10">
-                <div class="flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                        <p class="font-semibold text-slate-900">{{ __('Langganan Bulanan') }}</p>
+            @php $plans = \App\Models\SubscriptionPlan::where('is_active', true)->orderBy('sort_order')->get(); @endphp
+
+            <div class="mt-10 grid grid-cols-1 {{ $plans->count() > 1 ? 'sm:grid-cols-2' : 'max-w-md mx-auto' }} gap-6">
+                @foreach ($plans as $plan)
+                    <div class="bg-white border border-slate-200/70 shadow-soft rounded-2xl p-8">
+                        <p class="font-semibold text-slate-900">{{ $plan->name }}</p>
                         <p class="text-sm text-slate-500">{{ __('Akses penuh semua fitur, per toko') }}</p>
+
+                        <div class="mt-4">
+                            @if ($plan->hasActivePromo())
+                                <span class="text-sm text-slate-400 line-through">Rp {{ number_format($plan->price, 0, ',', '.') }}</span>
+                                @if ($plan->promo_label)
+                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600">{{ $plan->promo_label }}</span>
+                                @endif
+                                <p class="text-3xl font-extrabold text-brand-600">
+                                    Rp {{ number_format($plan->promo_price, 0, ',', '.') }}
+                                    <span class="text-base font-medium text-slate-400">/{{ __(':days hari', ['days' => $plan->duration_days]) }}</span>
+                                </p>
+                            @else
+                                <p class="text-3xl font-extrabold text-brand-600">
+                                    Rp {{ number_format($plan->price, 0, ',', '.') }}
+                                    <span class="text-base font-medium text-slate-400">/{{ __(':days hari', ['days' => $plan->duration_days]) }}</span>
+                                </p>
+                            @endif
+                        </div>
+
+                        <ul class="mt-6 space-y-2.5 text-sm text-slate-600">
+                            @foreach ([
+                                'Kasir & Self-Order tanpa batas transaksi',
+                                'Produk, kategori, dan tag tanpa batas',
+                                'Inventory & Stock Opname',
+                                'Manajemen karyawan & izin akses',
+                                'Laporan penjualan real-time',
+                            ] as $item)
+                                <li class="flex items-start gap-2">
+                                    <svg class="h-5 w-5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                    {{ __($item) }}
+                                </li>
+                            @endforeach
+                        </ul>
+
+                        <div class="mt-8">
+                            @auth
+                                <a href="{{ route('billing.subscribe') }}" wire:navigate class="flex items-center justify-center gap-2 px-6 py-3 bg-brand-600 rounded-lg font-medium text-white shadow-sm hover:bg-brand-700 transition">
+                                    {{ __('Kelola Langganan') }}
+                                </a>
+                            @else
+                                <a href="{{ route('register') }}" wire:navigate class="flex items-center justify-center gap-2 px-6 py-3 bg-brand-600 rounded-lg font-medium text-white shadow-sm hover:bg-brand-700 transition">
+                                    {{ __('Mulai Trial Gratis') }}
+                                </a>
+                            @endauth
+                        </div>
                     </div>
-                    <p class="text-4xl font-extrabold text-brand-600">
-                        Rp {{ number_format(\App\Models\Store::SUBSCRIPTION_MONTHLY_PRICE, 0, ',', '.') }}
-                        <span class="text-base font-medium text-slate-400">/{{ __('bulan') }}</span>
-                    </p>
-                </div>
-
-                <ul class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-600">
-                    @foreach ([
-                        'Kasir & Self-Order tanpa batas transaksi',
-                        'Produk, kategori, dan tag tanpa batas',
-                        'Inventory & Stock Opname',
-                        'Manajemen karyawan & izin akses',
-                        'Ganti akun cepat tanpa login ulang',
-                        'Laporan penjualan real-time',
-                    ] as $item)
-                        <li class="flex items-start gap-2">
-                            <svg class="h-5 w-5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                            {{ __($item) }}
-                        </li>
-                    @endforeach
-                </ul>
-
-                <div class="mt-8">
-                    @auth
-                        <a href="{{ route('billing.subscribe') }}" wire:navigate class="flex items-center justify-center gap-2 px-6 py-3 bg-brand-600 rounded-lg font-medium text-white shadow-sm hover:bg-brand-700 transition">
-                            {{ __('Kelola Langganan') }}
-                        </a>
-                    @else
-                        <a href="{{ route('register') }}" wire:navigate class="flex items-center justify-center gap-2 px-6 py-3 bg-brand-600 rounded-lg font-medium text-white shadow-sm hover:bg-brand-700 transition">
-                            {{ __('Mulai Trial Gratis :days Hari', ['days' => \App\Models\Store::TRIAL_DAYS]) }}
-                        </a>
-                    @endauth
-                    <p class="mt-3 text-center text-xs text-slate-400">{{ __('Tanpa kartu kredit. Batal kapan saja.') }}</p>
-                </div>
+                @endforeach
             </div>
+
+            <p class="mt-6 text-center text-xs text-slate-400">
+                {{ __('Trial gratis :days hari untuk akun baru, tanpa kartu kredit. Batal kapan saja.', ['days' => \App\Models\Store::TRIAL_DAYS]) }}
+            </p>
         </section>
 
         <!-- Final CTA -->

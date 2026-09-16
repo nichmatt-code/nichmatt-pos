@@ -64,6 +64,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return view('developer.store-show', ['store' => $store]);
         })->name('stores.show');
         Route::view('team', 'developer.team')->name('team');
+        Route::view('pricing', 'developer.pricing')->name('pricing');
     });
 });
 

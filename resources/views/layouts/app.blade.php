@@ -31,7 +31,7 @@
         <div class="min-h-screen bg-slate-50 dark:bg-slate-950">
             <livewire:layout.navigation />
 
-            @if (auth()->user()?->store?->onTrial())
+            @if (auth()->user()?->store?->shouldShowTrialNotice())
                 <div class="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-100 dark:border-amber-900/60">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 text-center text-sm text-amber-800 dark:text-amber-300">
                         {{ __('Masa trial tersisa :days hari.', ['days' => auth()->user()->store->trialDaysLeft()]) }}

@@ -67,12 +67,23 @@ class MidtransNotificationController extends Controller
         return hash_equals($expected, $payload['signature_key']);
     }
 
+    /**
+     * Midtrans can (and does) send duplicate notifications for the same
+     * transaction, so a payment already marked settled is never
+     * reprocessed - otherwise the store's subscription and any promo
+     * code's redemption count would be extended/incremented twice.
+     */
     private function activateSubscription(StoreSubscriptionPayment $payment): void
     {
+        if ($payment->status === 'settlement') {
+            return;
+        }
+
         $store = Store::findOrFail($payment->store_id);
 
+        $durationDays = $payment->duration_days ?? 30;
         $periodStart = $store->nextSubscriptionPeriodStart();
-        $periodEnd = $periodStart->copy()->addMonth();
+        $periodEnd = $periodStart->copy()->addDays($durationDays);
 
         $payment->status = 'settlement';
         $payment->period_start = $periodStart;
@@ -84,5 +95,7 @@ class MidtransNotificationController extends Controller
             'subscription_status' => 'active',
             'subscription_ends_at' => $periodEnd,
         ]);
+
+        $payment->promoCode?->increment('times_redeemed');
     }
 }

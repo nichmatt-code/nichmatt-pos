@@ -68,7 +68,7 @@ class SubscriptionAccessTest extends TestCase
         $payment = StoreSubscriptionPayment::create([
             'store_id' => $store->id,
             'order_id' => 'SUB-1-TEST',
-            'amount' => Store::SUBSCRIPTION_MONTHLY_PRICE,
+            'amount' => 100_000,
             'status' => 'pending',
         ]);
 
@@ -104,7 +104,7 @@ class SubscriptionAccessTest extends TestCase
         $payment = StoreSubscriptionPayment::create([
             'store_id' => $store->id,
             'order_id' => 'SUB-2-TEST',
-            'amount' => Store::SUBSCRIPTION_MONTHLY_PRICE,
+            'amount' => 100_000,
             'status' => 'pending',
         ]);
 

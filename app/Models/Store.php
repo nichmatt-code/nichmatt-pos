@@ -16,8 +16,6 @@ class Store extends Model
 
     public const TRIAL_DAYS = 30;
 
-    public const SUBSCRIPTION_MONTHLY_PRICE = 100_000;
-
     protected $fillable = [
         'name',
         'address',
@@ -115,6 +113,16 @@ class Store extends Model
         }
 
         return now();
+    }
+
+    /**
+     * Whether the "trial ending soon" banner should still show: only while
+     * genuinely on trial and not already covered by a paid subscription
+     * (trial_ends_at is never cleared when a store subscribes early).
+     */
+    public function shouldShowTrialNotice(): bool
+    {
+        return $this->onTrial() && ! $this->subscriptionActive();
     }
 
     public function users(): HasMany
