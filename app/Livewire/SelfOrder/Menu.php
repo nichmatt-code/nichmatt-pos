@@ -34,12 +34,20 @@ class Menu extends Component
 
     public ?int $confirmedTotal = null;
 
+    public ?int $viewingProductId = null;
+
+    public int $modalQty = 1;
+
     public function mount(Store $store): void
     {
         $this->store = $store;
     }
 
-    public function addToCart(int $productId): void
+    /**
+     * Open the mini detail modal for a menu item so the customer can review
+     * its description and confirm a quantity before it's added to the cart.
+     */
+    public function openProductModal(int $productId): void
     {
         $product = $this->products()->where('products.id', $productId)->first();
 
@@ -49,22 +57,68 @@ class Menu extends Component
             return;
         }
 
-        $maxQty = $product->is_unlimited_stock ? PHP_INT_MAX : $product->stock_qty;
+        $this->viewingProductId = $productId;
+        $this->modalQty = 1;
+    }
 
-        if (isset($this->cart[$productId])) {
-            if ($this->cart[$productId]['qty'] < $maxQty) {
-                $this->cart[$productId]['qty']++;
-            }
+    public function closeProductModal(): void
+    {
+        $this->viewingProductId = null;
+        $this->modalQty = 1;
+    }
+
+    public function incrementModalQty(): void
+    {
+        $product = $this->viewingProduct;
+        $maxQty = $product && $product->is_unlimited_stock ? PHP_INT_MAX : $product?->stock_qty ?? 1;
+
+        if ($this->modalQty < $maxQty) {
+            $this->modalQty++;
+        }
+    }
+
+    public function decrementModalQty(): void
+    {
+        if ($this->modalQty > 1) {
+            $this->modalQty--;
+        }
+    }
+
+    public function getViewingProductProperty(): ?Product
+    {
+        return $this->viewingProductId
+            ? $this->products()->where('products.id', $this->viewingProductId)->first()
+            : null;
+    }
+
+    public function confirmAddToCart(): void
+    {
+        $product = $this->viewingProduct;
+
+        if (! $product || ! $product->isAvailable()) {
+            $this->closeProductModal();
+
+            return;
+        }
+
+        $maxQty = $product->is_unlimited_stock ? PHP_INT_MAX : $product->stock_qty;
+        $qty = min($this->modalQty, $maxQty);
+
+        if (isset($this->cart[$product->id])) {
+            $this->cart[$product->id]['qty'] = min($this->cart[$product->id]['qty'] + $qty, $maxQty);
         } else {
-            $this->cart[$productId] = [
+            $this->cart[$product->id] = [
                 'product_id' => $product->id,
                 'name' => $product->name,
                 'price' => $product->price,
-                'qty' => 1,
+                'qty' => $qty,
                 'max_qty' => $maxQty,
                 'note' => '',
             ];
         }
+
+        $this->dispatch('product-added', message: "{$product->name} ditambahkan ke pesanan.");
+        $this->closeProductModal();
     }
 
     public function incrementQty(int $productId): void

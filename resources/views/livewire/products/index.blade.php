@@ -127,6 +127,13 @@
                     <x-input-error :messages="$errors->get('name')" class="mt-2" />
                 </div>
 
+                <div>
+                    <x-input-label for="description" value="Deskripsi (opsional)" />
+                    <textarea wire:model="description" id="description" rows="2" placeholder="mis. Nasi goreng dengan telur mata sapi, ayam suwir, dan kerupuk" class="mt-1 block w-full border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100"></textarea>
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Ditampilkan saat customer/kasir memilih produk ini.') }}</p>
+                    <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <x-input-label for="category_id" value="Kategori" />

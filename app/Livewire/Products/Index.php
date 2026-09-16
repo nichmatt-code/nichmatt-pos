@@ -30,6 +30,8 @@ class Index extends Component
 
     public string $name = '';
 
+    public string $description = '';
+
     public ?int $category_id = null;
 
     /** @var array<int, int> */
@@ -77,7 +79,7 @@ class Index extends Component
 
     public function createProduct(): void
     {
-        $this->reset(['editingId', 'name', 'category_id', 'tag_ids', 'newTagName', 'sku', 'barcode', 'price', 'cost_price', 'unit', 'stock_qty', 'is_out_of_stock', 'is_unlimited_stock', 'ingredientQty', 'image', 'existingImageUrl', 'removeExistingImage']);
+        $this->reset(['editingId', 'name', 'description', 'category_id', 'tag_ids', 'newTagName', 'sku', 'barcode', 'price', 'cost_price', 'unit', 'stock_qty', 'is_out_of_stock', 'is_unlimited_stock', 'ingredientQty', 'image', 'existingImageUrl', 'removeExistingImage']);
         $this->unit = 'pcs';
         $this->stock_qty = '0';
         $this->showFormModal = true;
@@ -89,6 +91,7 @@ class Index extends Component
 
         $this->editingId = $product->id;
         $this->name = $product->name;
+        $this->description = (string) $product->description;
         $this->category_id = $product->category_id;
         $this->tag_ids = $product->tags->pluck('id')->all();
         $this->newTagName = '';
@@ -181,6 +184,7 @@ class Index extends Component
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'sku' => [
                 'nullable', 'string', 'max:255',
@@ -201,6 +205,7 @@ class Index extends Component
 
         $validated['sku'] = $validated['sku'] !== '' ? $validated['sku'] : null;
         $validated['barcode'] = $validated['barcode'] !== '' ? $validated['barcode'] : null;
+        $validated['description'] = $validated['description'] !== '' ? $validated['description'] : null;
 
         $product = $this->editingId ? Product::findOrFail($this->editingId) : null;
 

@@ -172,4 +172,36 @@
             </div>
         </div>
     @endif
+
+    <!-- Product Detail Modal -->
+    @if ($this->viewingProduct)
+        @php $viewingProduct = $this->viewingProduct; @endphp
+        <div class="fixed inset-0 z-50 overflow-y-auto px-4 py-6">
+            <div class="fixed inset-0 bg-slate-900/60" wire:click="closeProductModal"></div>
+            <div class="relative mb-6 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-soft sm:max-w-sm sm:mx-auto">
+                <x-product-thumb :product="$viewingProduct" class="h-40 w-full rounded-none" />
+
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $viewingProduct->name }}</h3>
+                    @if ($viewingProduct->description)
+                        <p class="mt-1.5 text-sm text-slate-500 dark:text-slate-400">{{ $viewingProduct->description }}</p>
+                    @endif
+                    <p class="mt-2 text-lg font-semibold text-brand-600 dark:text-brand-400">Rp {{ number_format($viewingProduct->price, 0, ',', '.') }}</p>
+
+                    <div class="mt-4 flex items-center justify-center gap-4">
+                        <button type="button" wire:click="decrementModalQty" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">-</button>
+                        <span class="w-10 text-center text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $modalQty }}</span>
+                        <button type="button" wire:click="incrementModalQty" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-lg">+</button>
+                    </div>
+
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" wire:click="closeProductModal" class="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100">{{ __('Batal') }}</button>
+                        <x-primary-button type="button" wire:click="confirmAddToCart">{{ __('Tambahkan') }}</x-primary-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <x-toast on="product-added" />
 </div>

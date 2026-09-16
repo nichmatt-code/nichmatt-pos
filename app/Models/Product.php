@@ -20,6 +20,7 @@ class Product extends Model
         'store_id',
         'category_id',
         'name',
+        'description',
         'sku',
         'barcode',
         'price',
