@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Store;
 use App\Models\StoreSubscriptionPayment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -32,21 +31,12 @@ class MidtransNotificationController extends Controller
             return response('Order not found', 404);
         }
 
-        $transactionStatus = $payload['transaction_status'] ?? null;
-        $fraudStatus = $payload['fraud_status'] ?? null;
-
-        $payment->payment_type = $payload['payment_type'] ?? $payment->payment_type;
-        $payment->midtrans_transaction_id = $payload['transaction_id'] ?? $payment->midtrans_transaction_id;
-
-        if (in_array($transactionStatus, ['capture', 'settlement'], true) && $fraudStatus !== 'deny') {
-            $this->activateSubscription($payment);
-        } elseif (in_array($transactionStatus, ['expire', 'cancel', 'deny'], true)) {
-            $payment->status = $transactionStatus;
-            $payment->save();
-        } else {
-            $payment->status = $transactionStatus ?? $payment->status;
-            $payment->save();
-        }
+        $payment->applyMidtransStatus(
+            $payload['transaction_status'] ?? null,
+            $payload['fraud_status'] ?? null,
+            $payload['payment_type'] ?? null,
+            $payload['transaction_id'] ?? null,
+        );
 
         return response('OK', 200);
     }
@@ -65,37 +55,5 @@ class MidtransNotificationController extends Controller
         );
 
         return hash_equals($expected, $payload['signature_key']);
-    }
-
-    /**
-     * Midtrans can (and does) send duplicate notifications for the same
-     * transaction, so a payment already marked settled is never
-     * reprocessed - otherwise the store's subscription and any promo
-     * code's redemption count would be extended/incremented twice.
-     */
-    private function activateSubscription(StoreSubscriptionPayment $payment): void
-    {
-        if ($payment->status === 'settlement') {
-            return;
-        }
-
-        $store = Store::findOrFail($payment->store_id);
-
-        $durationDays = $payment->duration_days ?? 30;
-        $periodStart = $store->nextSubscriptionPeriodStart();
-        $periodEnd = $periodStart->copy()->addDays($durationDays);
-
-        $payment->status = 'settlement';
-        $payment->period_start = $periodStart;
-        $payment->period_end = $periodEnd;
-        $payment->paid_at = now();
-        $payment->save();
-
-        $store->update([
-            'subscription_status' => 'active',
-            'subscription_ends_at' => $periodEnd,
-        ]);
-
-        $payment->promoCode?->increment('times_redeemed');
     }
 }
