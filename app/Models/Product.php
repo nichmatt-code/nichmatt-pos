@@ -54,6 +54,17 @@ class Product extends Model
         return $this->belongsToMany(Tag::class);
     }
 
+    /**
+     * The inventory items consumed to make one unit of this product, with
+     * the quantity of each used per sale carried in the pivot.
+     */
+    public function ingredients(): BelongsToMany
+    {
+        return $this->belongsToMany(InventoryItem::class, 'product_ingredients')
+            ->withPivot('qty_used')
+            ->withTimestamps();
+    }
+
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);

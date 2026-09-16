@@ -161,6 +161,29 @@
                     </div>
                 </div>
 
+                <div>
+                    <x-input-label value="Bahan / Inventory yang Terpakai (opsional)" />
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('Jumlah bahan yang berkurang dari Inventory setiap 1 produk ini terjual.') }}</p>
+                    <div class="mt-2 space-y-1.5">
+                        @forelse ($inventoryItems as $item)
+                            <div class="flex items-center gap-3">
+                                <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                                    <input type="checkbox" wire:click="toggleIngredient({{ $item->id }})" @checked(array_key_exists($item->id, $ingredientQty)) class="rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800">
+                                    <span class="text-sm text-slate-700 dark:text-slate-200">{{ $item->name }}</span>
+                                </label>
+                                @if (array_key_exists($item->id, $ingredientQty))
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        <x-text-input wire:model="ingredientQty.{{ $item->id }}" type="number" min="1" class="block w-20 text-sm" />
+                                        <span class="text-xs text-slate-400 dark:text-slate-500">{{ $item->unit }}/{{ __('porsi') }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        @empty
+                            <span class="text-xs text-slate-400 dark:text-slate-500">{{ __('Belum ada barang di Inventory.') }}</span>
+                        @endforelse
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <x-input-label for="sku" value="SKU (opsional)" />

@@ -94,4 +94,33 @@
             </div>
         </div>
     </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
+        <div class="p-6 pb-0">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">{{ __('Penggunaan Inventory') }}</h3>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Total bahan baku yang terpakai dari penjualan pada rentang tanggal ini.') }}</p>
+        </div>
+        <div class="p-6 overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                        <th class="pb-2 pr-4">{{ __('Bahan') }}</th>
+                        <th class="pb-2">{{ __('Terpakai') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    @forelse ($inventoryUsage as $row)
+                        <tr>
+                            <td class="py-2.5 pr-4 text-slate-900 dark:text-slate-100 font-medium">{{ $row['name'] }}</td>
+                            <td class="py-2.5 text-slate-500 dark:text-slate-400">{{ $row['qty'] }} {{ $row['unit'] }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="2" class="py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada bahan yang terpakai.') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>

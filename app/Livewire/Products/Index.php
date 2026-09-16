@@ -3,6 +3,7 @@
 namespace App\Livewire\Products;
 
 use App\Models\Category;
+use App\Models\InventoryItem;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\Tag;
@@ -52,6 +53,9 @@ class Index extends Component
 
     public bool $is_unlimited_stock = false;
 
+    /** @var array<int, string> keyed by inventory_item_id */
+    public array $ingredientQty = [];
+
     public mixed $image = null;
 
     public ?string $existingImageUrl = null;
@@ -73,7 +77,7 @@ class Index extends Component
 
     public function createProduct(): void
     {
-        $this->reset(['editingId', 'name', 'category_id', 'tag_ids', 'newTagName', 'sku', 'barcode', 'price', 'cost_price', 'unit', 'stock_qty', 'is_out_of_stock', 'is_unlimited_stock', 'image', 'existingImageUrl', 'removeExistingImage']);
+        $this->reset(['editingId', 'name', 'category_id', 'tag_ids', 'newTagName', 'sku', 'barcode', 'price', 'cost_price', 'unit', 'stock_qty', 'is_out_of_stock', 'is_unlimited_stock', 'ingredientQty', 'image', 'existingImageUrl', 'removeExistingImage']);
         $this->unit = 'pcs';
         $this->stock_qty = '0';
         $this->showFormModal = true;
@@ -81,7 +85,7 @@ class Index extends Component
 
     public function editProduct(int $productId): void
     {
-        $product = Product::with('tags')->findOrFail($productId);
+        $product = Product::with(['tags', 'ingredients'])->findOrFail($productId);
 
         $this->editingId = $product->id;
         $this->name = $product->name;
@@ -96,10 +100,26 @@ class Index extends Component
         $this->stock_qty = (string) $product->stock_qty;
         $this->is_out_of_stock = $product->is_out_of_stock;
         $this->is_unlimited_stock = $product->is_unlimited_stock;
+        $this->ingredientQty = $product->ingredients
+            ->mapWithKeys(fn (InventoryItem $item) => [$item->id => (string) $item->pivot->qty_used])
+            ->all();
         $this->image = null;
         $this->existingImageUrl = $product->imageUrl();
         $this->removeExistingImage = false;
         $this->showFormModal = true;
+    }
+
+    /**
+     * Toggle whether an inventory item is used as an ingredient for the
+     * product being edited, defaulting its usage to 1 per sale.
+     */
+    public function toggleIngredient(int $inventoryItemId): void
+    {
+        if (array_key_exists($inventoryItemId, $this->ingredientQty)) {
+            unset($this->ingredientQty[$inventoryItemId]);
+        } else {
+            $this->ingredientQty[$inventoryItemId] = '1';
+        }
     }
 
     /**
@@ -203,6 +223,12 @@ class Index extends Component
 
         $product->tags()->sync($this->tag_ids);
 
+        $ingredients = collect($this->ingredientQty)
+            ->map(fn ($qty) => (int) $qty)
+            ->filter(fn (int $qty) => $qty > 0)
+            ->mapWithKeys(fn (int $qty, int $inventoryItemId) => [$inventoryItemId => ['qty_used' => $qty]]);
+        $product->ingredients()->sync($ingredients);
+
         $this->showFormModal = false;
     }
 
@@ -267,6 +293,7 @@ class Index extends Component
                 ->paginate(15),
             'categories' => Category::query()->orderBy('name')->get(),
             'tags' => Tag::query()->orderBy('name')->get(),
+            'inventoryItems' => InventoryItem::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 }

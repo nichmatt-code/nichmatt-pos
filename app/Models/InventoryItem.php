@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToStore;
 use Database\Factories\InventoryItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryItem extends Model
@@ -36,6 +37,16 @@ class InventoryItem extends Model
     public function movements(): HasMany
     {
         return $this->hasMany(InventoryMovement::class);
+    }
+
+    /**
+     * Products that use this inventory item as an ingredient.
+     */
+    public function usedInProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'product_ingredients')
+            ->withPivot('qty_used')
+            ->withTimestamps();
     }
 
     public function isLowStock(): bool

@@ -3,6 +3,7 @@
 namespace App\Livewire\Pos;
 
 use App\Models\Category;
+use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\SelfOrder;
 use App\Models\StockMovement;
@@ -290,8 +291,9 @@ class Terminal extends Component
                     'subtotal' => $item['price'] * $item['qty'],
                 ]);
 
+                $product = Product::with('ingredients')->findOrFail($item['product_id']);
+
                 if (empty($item['unlimited'])) {
-                    $product = Product::findOrFail($item['product_id']);
                     $product->decrement('stock_qty', $item['qty']);
 
                     StockMovement::create([
@@ -299,6 +301,20 @@ class Terminal extends Component
                         'user_id' => Auth::id(),
                         'type' => 'out',
                         'qty' => -$item['qty'],
+                        'note' => 'Penjualan '.$transaction->transaction_no,
+                    ]);
+                }
+
+                foreach ($product->ingredients as $ingredient) {
+                    $qtyUsed = $ingredient->pivot->qty_used * $item['qty'];
+
+                    $ingredient->decrement('stock_qty', $qtyUsed);
+
+                    InventoryMovement::create([
+                        'inventory_item_id' => $ingredient->id,
+                        'user_id' => Auth::id(),
+                        'type' => 'out',
+                        'qty' => -$qtyUsed,
                         'note' => 'Penjualan '.$transaction->transaction_no,
                     ]);
                 }

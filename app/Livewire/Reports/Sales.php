@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Reports;
 
+use App\Models\InventoryMovement;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use Illuminate\Contracts\View\View;
@@ -45,12 +46,30 @@ class Sales extends Component
             ->take(10)
             ->values();
 
+        $inventoryUsage = InventoryMovement::query()
+            ->with('inventoryItem')
+            ->where('type', 'out')
+            ->where('note', 'like', 'Penjualan %')
+            ->whereDate('created_at', '>=', $this->startDate)
+            ->whereDate('created_at', '<=', $this->endDate)
+            ->get()
+            ->filter(fn (InventoryMovement $movement) => $movement->inventoryItem !== null)
+            ->groupBy('inventory_item_id')
+            ->map(fn ($rows) => [
+                'name' => $rows->first()->inventoryItem->name,
+                'unit' => $rows->first()->inventoryItem->unit,
+                'qty' => $rows->sum(fn ($row) => abs($row->qty)),
+            ])
+            ->sortByDesc('qty')
+            ->values();
+
         return view('livewire.reports.sales', [
             'transactions' => $transactions,
             'totalOmzet' => $transactions->sum('total'),
             'totalTransactions' => $transactions->count(),
             'totalProfit' => $items->sum(fn ($item) => ($item->price - $item->cost_price) * $item->qty),
             'bestSellers' => $bestSellers,
+            'inventoryUsage' => $inventoryUsage,
         ]);
     }
 }
