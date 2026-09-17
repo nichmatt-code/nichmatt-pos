@@ -7,6 +7,39 @@
 
         <title>{{ config('app.name', 'NichmattPOS') }} &mdash; Aplikasi Kasir, Self-Order &amp; Inventory Dalam Satu Sistem</title>
         <meta name="description" content="NichmattPOS adalah aplikasi kasir (POS) untuk toko dan resto: kasir cepat, self-order pelanggan lewat QR code, inventory dengan resep otomatis, data pelanggan, dashboard analitik, hingga manajemen karyawan. Coba gratis 30 hari.">
+        <meta name="robots" content="index, follow">
+        <link rel="canonical" href="{{ url('/') }}">
+
+        <!-- Open Graph / social preview -->
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="{{ config('app.name', 'NichmattPOS') }}">
+        <meta property="og:locale" content="id_ID">
+        <meta property="og:url" content="{{ url('/') }}">
+        <meta property="og:title" content="{{ config('app.name', 'NichmattPOS') }} — Aplikasi Kasir, Self-Order & Inventory Dalam Satu Sistem">
+        <meta property="og:description" content="Kasir cepat, self-order lewat QR code, inventory dengan resep otomatis, data pelanggan, dashboard analitik, hingga manajemen karyawan — dalam satu aplikasi. Coba gratis 30 hari.">
+        <meta property="og:image" content="{{ asset('images/logo.png') }}">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:title" content="{{ config('app.name', 'NichmattPOS') }} — Aplikasi Kasir, Self-Order & Inventory">
+        <meta name="twitter:description" content="Kasir cepat, self-order lewat QR code, inventory dengan resep otomatis, dashboard analitik, dan manajemen karyawan dalam satu aplikasi.">
+        <meta name="twitter:image" content="{{ asset('images/logo.png') }}">
+
+        <!-- Structured data for search engines -->
+        <script type="application/ld+json">
+        {
+            "@@context": "https://schema.org",
+            "@@type": "SoftwareApplication",
+            "name": {!! json_encode(config('app.name', 'NichmattPOS')) !!},
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "url": {!! json_encode(url('/')) !!},
+            "description": "Aplikasi kasir (POS) untuk toko dan resto: kasir cepat, self-order lewat QR code, inventory dengan resep otomatis, data pelanggan, dashboard analitik, dan manajemen karyawan.",
+            "offers": {
+                "@@type": "Offer",
+                "priceCurrency": "IDR",
+                "availability": "https://schema.org/InStock"
+            }
+        }
+        </script>
 
         <!-- Favicon -->
         <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
