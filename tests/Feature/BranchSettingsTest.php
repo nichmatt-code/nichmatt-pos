@@ -32,6 +32,32 @@ class BranchSettingsTest extends TestCase
         $this->assertSame('Jl. Baru No. 1', $store->fresh()->address);
     }
 
+    public function test_owner_can_customize_the_receipt_width_and_footer_text(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Settings::class)
+            ->set('receiptFormat', 'thermal')
+            ->set('receiptWidth', '58mm')
+            ->set('receiptFooterText', 'Sampai jumpa lagi!')
+            ->call('saveReceiptFormat')
+            ->assertHasNoErrors();
+
+        $fresh = $store->fresh();
+        $this->assertSame('58mm', $fresh->receipt_width);
+        $this->assertSame('Sampai jumpa lagi!', $fresh->receipt_footer_text);
+        $this->assertSame('Sampai jumpa lagi!', $fresh->receiptFooterText());
+    }
+
+    public function test_receipt_footer_falls_back_to_the_default_when_not_customized(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+
+        $this->assertSame(Store::DEFAULT_RECEIPT_FOOTER, $store->receiptFooterText());
+    }
+
     public function test_owner_can_enable_online_payments_with_a_server_key(): void
     {
         $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);

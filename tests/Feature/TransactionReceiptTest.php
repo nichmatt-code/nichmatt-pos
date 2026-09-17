@@ -83,6 +83,29 @@ class TransactionReceiptTest extends TestCase
         $response->assertSee('Nasi Goreng');
     }
 
+    public function test_receipt_uses_the_stores_configured_paper_width(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10), 'receipt_width' => '58mm']);
+        $cashier = User::factory()->create(['store_id' => $store->id, 'role' => 'kasir']);
+        $transaction = $this->makeTransaction($store, $cashier);
+
+        $this->actingAs($cashier)
+            ->get(route('transactions.receipt', $transaction))
+            ->assertSee('width: 58mm', false);
+    }
+
+    public function test_receipt_shows_a_custom_footer_message_when_set(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10), 'receipt_footer_text' => 'Sampai jumpa lagi!']);
+        $cashier = User::factory()->create(['store_id' => $store->id, 'role' => 'kasir']);
+        $transaction = $this->makeTransaction($store, $cashier);
+
+        $this->actingAs($cashier)
+            ->get(route('transactions.receipt', $transaction))
+            ->assertSee('Sampai jumpa lagi!')
+            ->assertDontSee('Terima kasih telah berbelanja');
+    }
+
     public function test_a_cashier_cannot_open_another_stores_receipt(): void
     {
         $storeOne = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);

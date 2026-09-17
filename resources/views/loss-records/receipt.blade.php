@@ -8,7 +8,7 @@
         body {
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            width: 80mm;
+            width: {{ $lossRecord->store->receipt_width }};
             margin: 0 auto;
             padding: 8px;
             color: #000;

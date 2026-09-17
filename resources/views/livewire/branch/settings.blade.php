@@ -125,13 +125,13 @@
         <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ __('Format Struk') }}</h3>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ __('Pilih tata letak struk saat tombol "Cetak Struk" ditekan di kasir maupun laporan.') }}</p>
 
-        <form wire:submit="saveReceiptFormat" class="mt-4">
+        <form wire:submit="saveReceiptFormat" class="mt-4 space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label class="flex items-start gap-3 rounded-2xl border p-4 cursor-pointer transition {{ $receiptFormat === 'thermal' ? 'border-brand-400 bg-brand-50/60 dark:border-brand-600 dark:bg-brand-500/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-600' }}">
                     <input type="radio" wire:model="receiptFormat" value="thermal" class="mt-1 text-brand-600 focus:ring-brand-500">
                     <span>
                         <span class="block font-medium text-slate-900 dark:text-slate-100">{{ __('Printer Thermal') }}</span>
-                        <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('Ukuran kertas kecil (80mm), cocok untuk printer thermal via USB/Bluetooth.') }}</span>
+                        <span class="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ __('Ukuran kertas kecil, cocok untuk printer thermal via USB/Bluetooth.') }}</span>
                     </span>
                 </label>
 
@@ -144,7 +144,31 @@
                 </label>
             </div>
 
-            <div class="flex items-center gap-4 pt-4">
+            @if ($receiptFormat === 'thermal')
+                <div>
+                    <x-input-label value="Lebar Kertas Thermal" />
+                    <div class="mt-1.5 grid grid-cols-2 gap-2">
+                        <label class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-sm font-medium transition {{ $receiptWidth === '58mm' ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-brand-500/10 dark:border-brand-700 dark:text-brand-300' : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400' }}">
+                            <input type="radio" wire:model="receiptWidth" value="58mm" class="sr-only">
+                            58mm
+                        </label>
+                        <label class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer text-sm font-medium transition {{ $receiptWidth === '80mm' ? 'bg-brand-50 border-brand-300 text-brand-700 dark:bg-brand-500/10 dark:border-brand-700 dark:text-brand-300' : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400' }}">
+                            <input type="radio" wire:model="receiptWidth" value="80mm" class="sr-only">
+                            80mm
+                        </label>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Sesuaikan dengan ukuran kertas printer thermal Anda supaya tidak terpotong.') }}</p>
+                </div>
+            @endif
+
+            <div>
+                <x-input-label for="receiptFooterText" value="Pesan Footer Struk (opsional)" />
+                <x-text-input wire:model="receiptFooterText" id="receiptFooterText" type="text" class="block w-full" placeholder="{{ \App\Models\Store::DEFAULT_RECEIPT_FOOTER }}" />
+                <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Ditampilkan di bagian bawah struk. Kosongkan untuk memakai pesan bawaan.') }}</p>
+                <x-input-error :messages="$errors->get('receiptFooterText')" class="mt-2" />
+            </div>
+
+            <div class="flex items-center gap-4 pt-2">
                 <x-primary-button wire:loading.attr="disabled" wire:target="saveReceiptFormat">
                     <span wire:loading.remove wire:target="saveReceiptFormat">{{ __('Simpan') }}</span>
                     <span wire:loading wire:target="saveReceiptFormat">{{ __('Menyimpan...') }}</span>

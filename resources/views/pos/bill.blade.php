@@ -8,7 +8,7 @@
         body {
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            width: 80mm;
+            width: {{ $store->receipt_width }};
             margin: 0 auto;
             padding: 8px;
             color: #000;
@@ -85,6 +85,12 @@
             <tr>
                 <td>Diskon</td>
                 <td class="right">-{{ number_format($bill['discount'], 0, ',', '.') }}</td>
+            </tr>
+        @endif
+        @if (($bill['coupon_discount_amount'] ?? 0) > 0)
+            <tr>
+                <td>Diskon Kupon</td>
+                <td class="right">-{{ number_format($bill['coupon_discount_amount'], 0, ',', '.') }}</td>
             </tr>
         @endif
         @if (($bill['service_charge_amount'] ?? 0) > 0)

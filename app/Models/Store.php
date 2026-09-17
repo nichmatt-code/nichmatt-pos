@@ -21,6 +21,8 @@ class Store extends Model
 
     public const RECEIPT_FORMAT_PDF = 'pdf';
 
+    public const DEFAULT_RECEIPT_FOOTER = 'Terima kasih telah berbelanja';
+
     public const LOGO_SOURCE_POS = 'pos';
 
     public const LOGO_SOURCE_STORE = 'store';
@@ -36,6 +38,8 @@ class Store extends Model
         'midtrans_client_key',
         'midtrans_is_production',
         'receipt_format',
+        'receipt_width',
+        'receipt_footer_text',
         'show_product_images',
         'allow_price_edit',
         'tax_percent',
@@ -190,6 +194,17 @@ class Store extends Model
     public function usesPdfReceipt(): bool
     {
         return $this->receipt_format === self::RECEIPT_FORMAT_PDF;
+    }
+
+    /**
+     * The footer message printed on receipts, defaulting to a generic
+     * thank-you when the store hasn't customized it.
+     */
+    public function receiptFooterText(): string
+    {
+        return $this->receipt_footer_text !== null && $this->receipt_footer_text !== ''
+            ? $this->receipt_footer_text
+            : self::DEFAULT_RECEIPT_FOOTER;
     }
 
     public function taxAmountFor(int $amount): int

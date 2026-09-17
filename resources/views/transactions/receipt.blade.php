@@ -8,7 +8,7 @@
         body {
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            width: 80mm;
+            width: {{ $transaction->store->receipt_width }};
             margin: 0 auto;
             padding: 8px;
             color: #000;
@@ -82,6 +82,12 @@
                 <td class="right">-{{ number_format($transaction->discount, 0, ',', '.') }}</td>
             </tr>
         @endif
+        @if ($transaction->coupon_discount_amount > 0)
+            <tr>
+                <td>Diskon Kupon</td>
+                <td class="right">-{{ number_format($transaction->coupon_discount_amount, 0, ',', '.') }}</td>
+            </tr>
+        @endif
         @if ($transaction->service_charge_amount > 0)
             <tr>
                 <td>Service Charge</td>
@@ -110,7 +116,7 @@
 
     <div class="line"></div>
 
-    <div class="center">Terima kasih telah berbelanja</div>
+    <div class="center">{{ $transaction->store->receiptFooterText() }}</div>
 
     <div class="print-btn">
         <button onclick="window.print()">Cetak</button>

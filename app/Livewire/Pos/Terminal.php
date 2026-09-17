@@ -611,6 +611,7 @@ class Terminal extends Component
             'items' => array_values($this->cart),
             'subtotal' => $this->subtotal,
             'discount' => (int) $this->discount,
+            'coupon_discount_amount' => $this->couponDiscountAmount,
             'tax_amount' => $this->taxAmount,
             'service_charge_amount' => $this->serviceChargeAmount,
             'total' => $this->total,

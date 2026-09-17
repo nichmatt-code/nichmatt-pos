@@ -21,6 +21,10 @@ class Settings extends Component
 
     public string $receiptFormat = Store::RECEIPT_FORMAT_THERMAL;
 
+    public string $receiptWidth = '80mm';
+
+    public string $receiptFooterText = '';
+
     public mixed $logo = null;
 
     public ?string $existingLogoUrl = null;
@@ -55,6 +59,8 @@ class Settings extends Component
         $this->address = (string) $store->address;
         $this->phone = (string) $store->phone;
         $this->receiptFormat = $store->receipt_format;
+        $this->receiptWidth = $store->receipt_width;
+        $this->receiptFooterText = (string) $store->receipt_footer_text;
         $this->existingLogoUrl = $store->logoUrl();
         $this->logoSource = $store->logo_source;
         $this->showProductImages = $store->show_product_images;
@@ -119,9 +125,15 @@ class Settings extends Component
     {
         $validated = $this->validate([
             'receiptFormat' => ['required', 'in:'.Store::RECEIPT_FORMAT_THERMAL.','.Store::RECEIPT_FORMAT_PDF],
+            'receiptWidth' => ['required', 'in:58mm,80mm'],
+            'receiptFooterText' => ['nullable', 'string', 'max:255'],
         ]);
 
-        Auth::user()->store->update(['receipt_format' => $validated['receiptFormat']]);
+        Auth::user()->store->update([
+            'receipt_format' => $validated['receiptFormat'],
+            'receipt_width' => $validated['receiptWidth'],
+            'receipt_footer_text' => $validated['receiptFooterText'] !== '' ? $validated['receiptFooterText'] : null,
+        ]);
 
         $this->dispatch('receipt-format-updated');
     }

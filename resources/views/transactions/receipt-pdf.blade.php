@@ -125,6 +125,12 @@
                 <td class="right">-Rp {{ number_format($transaction->discount, 0, ',', '.') }}</td>
             </tr>
         @endif
+        @if ($transaction->coupon_discount_amount > 0)
+            <tr>
+                <td>{{ __('Diskon Kupon') }}</td>
+                <td class="right">-Rp {{ number_format($transaction->coupon_discount_amount, 0, ',', '.') }}</td>
+            </tr>
+        @endif
         @if ($transaction->service_charge_amount > 0)
             <tr>
                 <td>{{ __('Service Charge') }}</td>
@@ -151,7 +157,7 @@
         </tr>
     </table>
 
-    <div class="footer">{{ __('Terima kasih telah berbelanja') }}</div>
+    <div class="footer">{{ $transaction->store->receiptFooterText() }}</div>
 
     <div class="print-btn">
         <button onclick="window.print()">{{ __('Cetak / Simpan sebagai PDF') }}</button>
