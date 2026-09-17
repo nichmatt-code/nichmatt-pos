@@ -80,7 +80,7 @@ class Sales extends Component
         $inventoryUsage = InventoryMovement::query()
             ->with('inventoryItem')
             ->where('type', 'out')
-            ->where('note', 'like', 'Penjualan %')
+            ->where('note', 'like', '%Penjualan%')
             ->whereDate('created_at', '>=', $this->startDate)
             ->whereDate('created_at', '<=', $this->endDate)
             ->get()
