@@ -22,6 +22,7 @@
                         <x-th-sort field="name" label="{{ __('Nama') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                         <th class="px-6 py-3">{{ __('No. HP') }}</th>
                         <th class="px-6 py-3">{{ __('Alamat') }}</th>
+                        <th class="px-6 py-3">{{ __('Tgl. Lahir') }}</th>
                         <x-th-sort field="transactions_count" label="{{ __('Total Transaksi') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                         <th class="px-6 py-3"></th>
                     </tr>
@@ -32,6 +33,14 @@
                             <td class="px-6 py-3.5 text-slate-900 dark:text-slate-100 font-medium">{{ $customer->name }}</td>
                             <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400">{{ $customer->phone }}</td>
                             <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400 max-w-xs truncate">{{ $customer->address ?? '-' }}</td>
+                            <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                @if ($customer->birthdate)
+                                    {{ $customer->birthdate->translatedFormat('d M Y') }}
+                                    <span class="text-xs text-slate-400 dark:text-slate-500">({{ $customer->age() }} th)</span>
+                                @else
+                                    -
+                                @endif
+                            </td>
                             <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400">{{ $customer->transactions_count }}</td>
                             <td class="px-6 py-3.5 text-right space-x-3 whitespace-nowrap">
                                 <button wire:click="editCustomer({{ $customer->id }})" class="text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium">{{ __('Edit') }}</button>
@@ -40,7 +49,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada pelanggan.') }}</td>
+                            <td colspan="6" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada pelanggan.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -77,6 +86,13 @@
                     <x-input-label for="address" value="Alamat (opsional)" />
                     <textarea wire:model="address" id="address" rows="2" class="mt-1 block w-full border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100"></textarea>
                     <x-input-error :messages="$errors->get('address')" class="mt-2" />
+                </div>
+
+                <div>
+                    <x-input-label for="birthdate" value="Tanggal Lahir (opsional)" />
+                    <input wire:model="birthdate" id="birthdate" type="date" class="mt-1 block w-full border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100">
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Dipakai untuk kupon promo ulang tahun yang nilainya mengikuti umur.') }}</p>
+                    <x-input-error :messages="$errors->get('birthdate')" class="mt-2" />
                 </div>
 
                 <div>

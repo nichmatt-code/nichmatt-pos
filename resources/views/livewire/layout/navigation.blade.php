@@ -70,7 +70,7 @@ new class extends Component
     @php
         $user = auth()->user();
         $inOperational = request()->routeIs('pos') || request()->routeIs('preparation.index') || request()->routeIs('stock-opname.*');
-        $inProduct = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('tags.index') || request()->routeIs('inventory.index') || request()->routeIs('packages.index') || request()->routeIs('promos.index');
+        $inProduct = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('tags.index') || request()->routeIs('inventory.index') || request()->routeIs('packages.index') || request()->routeIs('coupons.index');
         $inAdministration = request()->routeIs('team.index') || request()->routeIs('branch.settings') || request()->routeIs('customers.index');
         $hasProduct = $user->hasPermission(\App\Permission::Products)
             || $user->hasPermission(\App\Permission::Categories)
@@ -223,8 +223,8 @@ new class extends Component
                                 <x-dropdown-link :href="route('packages.index')" wire:navigate>
                                     {{ __('Paket') }}
                                 </x-dropdown-link>
-                                <x-dropdown-link :href="route('promos.index')" wire:navigate>
-                                    {{ __('Promo') }}
+                                <x-dropdown-link :href="route('coupons.index')" wire:navigate>
+                                    {{ __('Kupon') }}
                                 </x-dropdown-link>
                             @endif
                         </x-nav-dropdown>
@@ -339,8 +339,8 @@ new class extends Component
                     <x-responsive-nav-link :href="route('packages.index')" :active="request()->routeIs('packages.index')" wire:navigate>
                         {{ __('Paket') }}
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('promos.index')" :active="request()->routeIs('promos.index')" wire:navigate>
-                        {{ __('Promo') }}
+                    <x-responsive-nav-link :href="route('coupons.index')" :active="request()->routeIs('coupons.index')" wire:navigate>
+                        {{ __('Kupon') }}
                     </x-responsive-nav-link>
                 @endif
             @endif

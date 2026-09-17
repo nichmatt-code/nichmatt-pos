@@ -3,13 +3,13 @@
 namespace App\Livewire\Pos;
 
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\InventoryMovement;
 use App\Models\LossRecord;
 use App\Models\LossRecordItem;
 use App\Models\Package;
 use App\Models\Product;
-use App\Models\Promo;
 use App\Models\QrisPayment;
 use App\Models\SelfOrder;
 use App\Models\StockMovement;
@@ -27,9 +27,9 @@ use Livewire\Component;
 class Terminal extends Component
 {
     /**
-     * Keyed by product_id for a normal product line, or "pkg_{package_id}"
-     * for a package line, or "gift_{promo_id}" for an auto-added free item
-     * from a gift promo.
+     * Keyed by product_id for a normal product line, "pkg_{package_id}" for
+     * a package line, or "coupon_gift" for the one free item granted by a
+     * currently-applied coupon.
      *
      * @var array<int|string, array{product_id: ?int, package_id: ?int, name: string, price: int, cost_price: int, qty: int, max_qty: int, note: string, unlimited: bool, type: string, is_gift?: bool}>
      */
@@ -76,6 +76,10 @@ class Terminal extends Component
     public ?int $lastLossRecordId = null;
 
     public ?int $qrisPaymentId = null;
+
+    public string $couponCodeInput = '';
+
+    public ?int $appliedCouponId = null;
 
     public function addToCart(int $productId): void
     {
@@ -156,7 +160,7 @@ class Terminal extends Component
                 'product_id' => $product->id,
                 'package_id' => null,
                 'name' => $product->name,
-                'price' => $this->effectivePriceFor($product),
+                'price' => $product->price,
                 'cost_price' => $product->cost_price,
                 'qty' => $qty,
                 'max_qty' => $maxQty,
@@ -165,8 +169,6 @@ class Terminal extends Component
                 'type' => 'product',
             ];
         }
-
-        $this->syncGiftPromos();
     }
 
     /**
@@ -210,27 +212,11 @@ class Terminal extends Component
     }
 
     /**
-     * The price a product currently sells for, applying an active discount
-     * promo (if any) on top of its normal price.
-     */
-    private function effectivePriceFor(Product $product): int
-    {
-        $promo = Promo::query()
-            ->where('product_id', $product->id)
-            ->where('type', Promo::TYPE_DISCOUNT)
-            ->where('is_active', true)
-            ->get()
-            ->first(fn (Promo $promo) => $promo->isCurrentlyActive());
-
-        return $promo ? $promo->discountedPriceFor($product->price) : $product->price;
-    }
-
-    /**
-     * Re-derive every product line's price from the current product +
-     * active discount promo (not from client-submitted cart state), used
-     * when the store doesn't allow the cashier to edit prices manually.
-     * Package lines (fixed by the package's own price) and gift lines
-     * (always free) are left untouched.
+     * Re-derive every product line's price from the current product (not
+     * from client-submitted cart state), used when the store doesn't allow
+     * the cashier to edit prices manually. Package lines (fixed by the
+     * package's own price) and the coupon gift line (always free) are left
+     * untouched.
      */
     private function reassertCartPrices(): void
     {
@@ -244,82 +230,135 @@ class Terminal extends Component
             return;
         }
 
-        $products = Product::query()->whereIn('id', $productIds)->get()->keyBy('id');
+        $realPrices = Product::query()->whereIn('id', $productIds)->pluck('price', 'id');
 
         foreach ($this->cart as $key => $item) {
             if (($item['type'] ?? 'product') !== 'product' || ! empty($item['is_gift'])) {
                 continue;
             }
 
-            $product = $products->get($item['product_id']);
-
-            if ($product) {
-                $this->cart[$key]['price'] = $this->effectivePriceFor($product);
+            if (isset($realPrices[$item['product_id']])) {
+                $this->cart[$key]['price'] = $realPrices[$item['product_id']];
             }
         }
     }
 
     /**
-     * Recompute every "buy X get Y free" gift promo against the cart's
-     * current product quantities, adding/adjusting/removing the auto-added
-     * free line items to match. Called after any cart mutation so the
-     * earned gift always reflects what's actually in the cart right now.
+     * Apply a coupon code by hand - the only way a discount or free gift
+     * ever gets into a Kasir sale. Only one coupon can be active on a
+     * transaction at a time.
      */
-    private function syncGiftPromos(): void
+    public function applyCoupon(): void
     {
-        foreach ($this->cart as $key => $item) {
-            if (! empty($item['is_gift'])) {
-                unset($this->cart[$key]);
+        $code = strtoupper(trim($this->couponCodeInput));
+
+        if ($code === '') {
+            return;
+        }
+
+        $coupon = Coupon::where('code', $code)->first();
+
+        if (! $coupon) {
+            $this->addError('couponCodeInput', 'Kupon tidak ditemukan.');
+
+            return;
+        }
+
+        if (! $coupon->isCurrentlyActive()) {
+            $this->addError('couponCodeInput', 'Kupon sudah tidak berlaku.');
+
+            return;
+        }
+
+        if ($coupon->is_age_based) {
+            $customer = $this->selectedCustomerId ? Customer::find($this->selectedCustomerId) : null;
+
+            if (! $customer || ! $customer->birthdate) {
+                $this->addError('couponCodeInput', 'Pilih customer dengan tanggal lahir tercatat untuk pakai kupon ini.');
+
+                return;
             }
         }
 
-        $gifts = Promo::query()
-            ->where('type', Promo::TYPE_GIFT)
-            ->where('is_active', true)
-            ->with('giftProduct')
-            ->get()
-            ->filter(fn (Promo $promo) => $promo->isCurrentlyActive());
+        $this->appliedCouponId = $coupon->id;
+        $this->couponCodeInput = '';
+        $this->syncCouponGift();
+    }
 
-        foreach ($gifts as $promo) {
-            $triggerItem = $this->cart[$promo->product_id] ?? null;
+    public function removeCoupon(): void
+    {
+        $this->appliedCouponId = null;
+        unset($this->cart['coupon_gift']);
+    }
 
-            if (! $triggerItem || ($triggerItem['type'] ?? null) !== 'product') {
-                continue;
-            }
+    /**
+     * Grant (or refresh) the free product line from the applied coupon's
+     * gift, if it has one and enough stock is available.
+     */
+    private function syncCouponGift(): void
+    {
+        unset($this->cart['coupon_gift']);
 
-            $earnedQty = intdiv($triggerItem['qty'], max(1, $promo->min_qty)) * $promo->gift_qty;
+        $coupon = $this->appliedCoupon;
 
-            if ($earnedQty <= 0) {
-                continue;
-            }
-
-            $giftProduct = $promo->giftProduct;
-
-            if (! $giftProduct || ! $giftProduct->isAvailable()) {
-                continue;
-            }
-
-            $maxQty = $giftProduct->is_unlimited_stock ? PHP_INT_MAX : $giftProduct->stock_qty;
-            $qty = min($earnedQty, $maxQty);
-
-            if ($qty < 1) {
-                continue;
-            }
-
-            $this->cart['gift_'.$promo->id] = [
-                'product_id' => $giftProduct->id,
-                'package_id' => null,
-                'name' => $giftProduct->name.' ('.__('Hadiah Promo').')',
-                'price' => 0,
-                'cost_price' => $giftProduct->cost_price,
-                'qty' => $qty,
-                'max_qty' => $qty,
-                'note' => '',
-                'unlimited' => $giftProduct->is_unlimited_stock,
-                'type' => 'product',
-                'is_gift' => true,
-            ];
+        if (! $coupon || ! $coupon->hasGift()) {
+            return;
         }
+
+        $giftProduct = $coupon->giftProduct;
+
+        if (! $giftProduct || ! $giftProduct->isAvailable()) {
+            return;
+        }
+
+        $maxQty = $giftProduct->is_unlimited_stock ? PHP_INT_MAX : $giftProduct->stock_qty;
+        $qty = min($coupon->gift_qty, $maxQty);
+
+        if ($qty < 1) {
+            return;
+        }
+
+        $this->cart['coupon_gift'] = [
+            'product_id' => $giftProduct->id,
+            'package_id' => null,
+            'name' => $giftProduct->name.' ('.__('Hadiah Kupon').')',
+            'price' => 0,
+            'cost_price' => $giftProduct->cost_price,
+            'qty' => $qty,
+            'max_qty' => $qty,
+            'note' => '',
+            'unlimited' => $giftProduct->is_unlimited_stock,
+            'type' => 'product',
+            'is_gift' => true,
+        ];
+    }
+
+    public function getAppliedCouponProperty(): ?Coupon
+    {
+        return $this->appliedCouponId ? Coupon::find($this->appliedCouponId) : null;
+    }
+
+    /**
+     * How much the applied coupon actually discounts the subtotal by,
+     * dynamically computed from the selected customer's age when the
+     * coupon's value depends on it.
+     */
+    public function getCouponDiscountAmountProperty(): int
+    {
+        $coupon = $this->appliedCoupon;
+
+        if (! $coupon) {
+            return 0;
+        }
+
+        $customerAge = null;
+
+        if ($coupon->is_age_based) {
+            $customer = $this->selectedCustomerId ? Customer::find($this->selectedCustomerId) : null;
+            $customerAge = $customer?->age();
+        }
+
+        return $coupon->discountAmountFor($this->subtotal, $customerAge);
     }
 
     /**
@@ -354,8 +393,6 @@ class Terminal extends Component
         if (isset($this->cart[$cartKey]) && $this->cart[$cartKey]['qty'] < $this->cart[$cartKey]['max_qty']) {
             $this->cart[$cartKey]['qty']++;
         }
-
-        $this->syncGiftPromos();
     }
 
     public function decrementQty(int|string $cartKey): void
@@ -369,14 +406,11 @@ class Terminal extends Component
         if ($this->cart[$cartKey]['qty'] <= 0) {
             unset($this->cart[$cartKey]);
         }
-
-        $this->syncGiftPromos();
     }
 
     public function removeFromCart(int|string $cartKey): void
     {
         unset($this->cart[$cartKey]);
-        $this->syncGiftPromos();
     }
 
     public function toggleTag(int $tagId): void
@@ -528,7 +562,7 @@ class Terminal extends Component
                     'product_id' => $product->id,
                     'package_id' => null,
                     'name' => $product->name,
-                    'price' => $this->effectivePriceFor($product),
+                    'price' => $product->price,
                     'cost_price' => $product->cost_price,
                     'qty' => $qty,
                     'max_qty' => $maxQty,
@@ -538,8 +572,6 @@ class Terminal extends Component
                 ];
             }
         }
-
-        $this->syncGiftPromos();
 
         $this->customerName = (string) $selfOrder->customer_name;
         $this->selectedCustomerId = null;
@@ -589,7 +621,7 @@ class Terminal extends Component
 
     public function newTransaction(): void
     {
-        $this->reset(['cart', 'discount', 'paidAmount', 'lastTransactionId', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId']);
+        $this->reset(['cart', 'discount', 'paidAmount', 'lastTransactionId', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId', 'couponCodeInput', 'appliedCouponId']);
         $this->discount = '0';
         $this->paymentMethod = 'cash';
     }
@@ -606,7 +638,7 @@ class Terminal extends Component
 
     public function getDiscountedSubtotalProperty(): int
     {
-        return max(0, $this->subtotal - (int) $this->discount);
+        return max(0, $this->subtotal - (int) $this->discount - $this->couponDiscountAmount);
     }
 
     /**
@@ -653,9 +685,9 @@ class Terminal extends Component
 
         // The price input is only rendered when the store allows editing it,
         // but a forged request could still set cart.*.price directly - so
-        // reassert the real (promo-aware) price server-side whenever it's
-        // off. Package and gift lines aren't touched - their price comes
-        // from the package/promo definition, not a Product row.
+        // reassert the real price server-side whenever it's off. Package
+        // and gift lines aren't touched - their price is fixed by the
+        // package/coupon definition, not a Product row.
         if (! $this->store->allow_price_edit) {
             $this->reassertCartPrices();
         }
@@ -663,6 +695,12 @@ class Terminal extends Component
         if ($this->discount > $this->subtotal) {
             $this->addError('discount', 'Diskon tidak boleh melebihi subtotal.');
 
+            return;
+        }
+
+        [$couponId, $couponDiscountAmount] = $this->verifyAppliedCoupon();
+
+        if ($couponId === false) {
             return;
         }
 
@@ -681,6 +719,8 @@ class Terminal extends Component
             'order_note' => $this->orderNote,
             'subtotal' => $this->subtotal,
             'discount' => (int) $this->discount,
+            'coupon_id' => $couponId,
+            'coupon_discount_amount' => $couponDiscountAmount,
             'tax_amount' => $this->taxAmount,
             'service_charge_amount' => $this->serviceChargeAmount,
             'total' => $this->total,
@@ -690,9 +730,38 @@ class Terminal extends Component
             'claimed_self_order_id' => $this->claimedSelfOrderId,
         ]);
 
-        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId']);
+        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId', 'couponCodeInput', 'appliedCouponId']);
         $this->discount = '0';
         $this->lastTransactionId = $transaction->id;
+    }
+
+    /**
+     * Re-verify the applied coupon is still active right before it actually
+     * discounts a sale (it could have expired or been deactivated since it
+     * was applied). Returns [couponId, discountAmount], or [false, 0] if an
+     * applied coupon just got invalidated - in which case it's dropped from
+     * the cart and the cashier must retry (rather than silently charging
+     * full price without saying why).
+     *
+     * @return array{0: int|null|false, 1: int}
+     */
+    private function verifyAppliedCoupon(): array
+    {
+        if (! $this->appliedCouponId) {
+            return [null, 0];
+        }
+
+        $coupon = $this->appliedCoupon;
+
+        if (! $coupon || ! $coupon->isCurrentlyActive()) {
+            $this->addError('couponCodeInput', 'Kupon sudah tidak berlaku dan dihapus dari transaksi. Silakan coba lagi.');
+            $this->appliedCouponId = null;
+            unset($this->cart['coupon_gift']);
+
+            return [false, 0];
+        }
+
+        return [$coupon->id, $this->couponDiscountAmount];
     }
 
     /**
@@ -701,7 +770,7 @@ class Terminal extends Component
      * the normal (manual) checkout and by a settled online QRIS payment.
      *
      * @param  array<int, array{product_id: int, name: string, price: int, cost_price: int, qty: int, note: string, unlimited: bool}>  $cart
-     * @param  array{user_id: ?int, customer_id: ?int, customer_name: string, order_note: string, subtotal: int, discount: int, tax_amount: int, service_charge_amount: int, total: int, payment_method: string, paid_amount: int, change_amount: int, claimed_self_order_id: ?int}  $meta
+     * @param  array{user_id: ?int, customer_id: ?int, customer_name: string, order_note: string, subtotal: int, discount: int, coupon_id: ?int, coupon_discount_amount: int, tax_amount: int, service_charge_amount: int, total: int, payment_method: string, paid_amount: int, change_amount: int, claimed_self_order_id: ?int}  $meta
      */
     private function materializeTransaction(array $cart, array $meta): Transaction
     {
@@ -715,6 +784,8 @@ class Terminal extends Component
                 'note' => $meta['order_note'] !== '' ? $meta['order_note'] : null,
                 'subtotal' => $meta['subtotal'],
                 'discount' => $meta['discount'],
+                'coupon_id' => $meta['coupon_id'] ?? null,
+                'coupon_discount_amount' => $meta['coupon_discount_amount'] ?? 0,
                 'tax_amount' => $meta['tax_amount'],
                 'service_charge_amount' => $meta['service_charge_amount'],
                 'total' => $meta['total'],
@@ -847,6 +918,12 @@ class Terminal extends Component
             return;
         }
 
+        [$couponId, $couponDiscountAmount] = $this->verifyAppliedCoupon();
+
+        if ($couponId === false) {
+            return;
+        }
+
         $orderId = 'QRIS-'.$this->store->id.'-'.now()->format('YmdHis').'-'.random_int(100, 999);
 
         $qrisPayment = QrisPayment::create([
@@ -861,6 +938,8 @@ class Terminal extends Component
                 'order_note' => $this->orderNote,
                 'subtotal' => $this->subtotal,
                 'discount' => (int) $this->discount,
+                'coupon_id' => $couponId,
+                'coupon_discount_amount' => $couponDiscountAmount,
                 'tax_amount' => $this->taxAmount,
                 'service_charge_amount' => $this->serviceChargeAmount,
                 'total' => $this->total,
@@ -954,6 +1033,8 @@ class Terminal extends Component
             'order_note' => $snapshot['order_note'],
             'subtotal' => $snapshot['subtotal'],
             'discount' => $snapshot['discount'],
+            'coupon_id' => $snapshot['coupon_id'] ?? null,
+            'coupon_discount_amount' => $snapshot['coupon_discount_amount'] ?? 0,
             'tax_amount' => $snapshot['tax_amount'],
             'service_charge_amount' => $snapshot['service_charge_amount'],
             'total' => $snapshot['total'],
@@ -965,7 +1046,7 @@ class Terminal extends Component
 
         $qrisPayment->update(['status' => 'settled', 'paid_at' => now(), 'transaction_id' => $transaction->id]);
 
-        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId']);
+        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId', 'couponCodeInput', 'appliedCouponId']);
         $this->discount = '0';
         $this->lastTransactionId = $transaction->id;
         $this->qrisPaymentId = null;
@@ -1171,16 +1252,12 @@ class Terminal extends Component
             ->limit(40)
             ->get();
 
-        $activePromos = Promo::activeForStore($this->store->id);
-
         return view('livewire.pos.terminal', [
             'products' => $products,
             'categories' => Category::query()->orderBy('name')->get(),
             'productGroups' => $this->activeCategoryId ? null : $products->groupBy(fn ($product) => $product->category_id ?? 0),
             'tags' => Tag::query()->orderBy('name')->get(),
             'packages' => Package::with('items.product')->where('is_active', true)->orderBy('name')->get(),
-            'promosByProduct' => $activePromos->where('type', Promo::TYPE_DISCOUNT)->keyBy('product_id'),
-            'giftPromosByProduct' => $activePromos->where('type', Promo::TYPE_GIFT)->groupBy('product_id'),
             'lastTransaction' => $this->lastTransactionId
                 ? Transaction::with('items')->find($this->lastTransactionId)
                 : null,

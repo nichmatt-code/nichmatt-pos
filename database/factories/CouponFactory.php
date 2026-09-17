@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\Promo;
+use App\Models\Coupon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Promo>
+ * @extends Factory<Coupon>
  */
-class PromoFactory extends Factory
+class CouponFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -18,10 +18,11 @@ class PromoFactory extends Factory
     public function definition(): array
     {
         return [
+            'code' => strtoupper($this->faker->unique()->bothify('PROMO##??')),
             'name' => $this->faker->words(2, true),
-            'type' => 'discount',
             'discount_type' => 'percent',
             'discount_value' => 10,
+            'is_age_based' => false,
             'is_active' => true,
         ];
     }

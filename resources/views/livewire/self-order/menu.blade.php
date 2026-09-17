@@ -156,30 +156,22 @@
                                         {{ $item['name'] }}
                                         @if (($item['type'] ?? 'product') === 'package')
                                             <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">{{ __('PAKET') }}</span>
-                                        @elseif (! empty($item['is_gift']))
-                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">{{ __('GRATIS') }}</span>
                                         @endif
                                     </div>
                                     <div class="text-slate-500 dark:text-slate-400">Rp {{ number_format($item['price'], 0, ',', '.') }}</div>
                                 </div>
-                                @if (! empty($item['is_gift']))
-                                    <span class="text-xs text-slate-400 dark:text-slate-500 px-1">x{{ $item['qty'] }}</span>
-                                @else
-                                    <div class="flex items-center gap-2">
-                                        <button type="button" wire:click="decrementQty('{{ $cartKey }}')" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">-</button>
-                                        <span class="w-6 text-center font-medium text-slate-900 dark:text-slate-100">{{ $item['qty'] }}</span>
-                                        <button type="button" wire:click="incrementQty('{{ $cartKey }}')" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">+</button>
-                                    </div>
-                                @endif
+                                <div class="flex items-center gap-2">
+                                    <button type="button" wire:click="decrementQty('{{ $cartKey }}')" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">-</button>
+                                    <span class="w-6 text-center font-medium text-slate-900 dark:text-slate-100">{{ $item['qty'] }}</span>
+                                    <button type="button" wire:click="incrementQty('{{ $cartKey }}')" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">+</button>
+                                </div>
                             </div>
-                            @if (empty($item['is_gift']))
-                                <input
-                                    type="text"
-                                    wire:model.blur="cart.{{ $cartKey }}.note"
-                                    placeholder="Catatan (opsional)"
-                                    class="mt-1.5 w-full text-xs border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-                                />
-                            @endif
+                            <input
+                                type="text"
+                                wire:model.blur="cart.{{ $cartKey }}.note"
+                                placeholder="Catatan (opsional)"
+                                class="mt-1.5 w-full text-xs border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            />
                         </div>
                     @empty
                         <p class="text-sm text-slate-400 dark:text-slate-500 py-6 text-center">{{ __('Belum ada item.') }}</p>

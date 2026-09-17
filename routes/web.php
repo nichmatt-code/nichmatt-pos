@@ -50,7 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permission:products');
         Route::view('packages', 'packages.index')->name('packages.index')
             ->middleware('permission:products');
-        Route::view('promos', 'promos.index')->name('promos.index')
+        Route::view('coupons', 'coupons.index')->name('coupons.index')
             ->middleware('permission:products');
         Route::view('inventory', 'inventory.index')->name('inventory.index')
             ->middleware('permission:inventory');

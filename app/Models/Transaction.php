@@ -24,6 +24,8 @@ class Transaction extends Model
         'note',
         'subtotal',
         'discount',
+        'coupon_id',
+        'coupon_discount_amount',
         'tax_amount',
         'service_charge_amount',
         'total',
@@ -39,6 +41,7 @@ class Transaction extends Model
         return [
             'subtotal' => 'integer',
             'discount' => 'integer',
+            'coupon_discount_amount' => 'integer',
             'tax_amount' => 'integer',
             'service_charge_amount' => 'integer',
             'total' => 'integer',
@@ -71,5 +74,10 @@ class Transaction extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 }

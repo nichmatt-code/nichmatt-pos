@@ -316,6 +316,45 @@
                     <x-input-error :messages="$errors->get('discount')" class="mt-1" />
                 </div>
 
+                @if ($this->appliedCoupon)
+                    @php $appliedCoupon = $this->appliedCoupon; @endphp
+                    <div class="flex items-center justify-between gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-500/10 px-3 py-2.5">
+                        <div>
+                            <div class="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{{ __('Kupon') }}: {{ $appliedCoupon->code }}</div>
+                            <div class="text-xs text-emerald-600 dark:text-emerald-500">
+                                @if ($appliedCoupon->hasDiscount())
+                                    -Rp {{ number_format($this->couponDiscountAmount, 0, ',', '.') }}
+                                @endif
+                                @if ($appliedCoupon->hasGift())
+                                    {{ $appliedCoupon->hasDiscount() ? '&' : '' }} {{ __('Gratis :name', ['name' => $appliedCoupon->giftProduct?->name]) }}
+                                @endif
+                            </div>
+                        </div>
+                        <button type="button" wire:click="removeCoupon" class="text-xs font-medium text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300">{{ __('Hapus') }}</button>
+                    </div>
+                @else
+                    <div>
+                        <x-input-label for="couponCodeInput" value="Kode Kupon (opsional)" />
+                        <div class="mt-1 flex gap-2">
+                            <input wire:model="couponCodeInput" wire:keydown.enter.prevent="applyCoupon" id="couponCodeInput" type="text"
+                                placeholder="mis. ULTAH25"
+                                class="block w-full uppercase tracking-widest border-slate-200 focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 placeholder:text-slate-400 placeholder:tracking-normal dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-500" />
+                            <x-secondary-button type="button" wire:click="applyCoupon" wire:loading.attr="disabled" wire:target="applyCoupon" class="shrink-0">
+                                <span wire:loading.remove wire:target="applyCoupon">{{ __('Terapkan') }}</span>
+                                <span wire:loading wire:target="applyCoupon">{{ __('Mengecek...') }}</span>
+                            </x-secondary-button>
+                        </div>
+                        <x-input-error :messages="$errors->get('couponCodeInput')" class="mt-1" />
+                    </div>
+                @endif
+
+                @if ($this->couponDiscountAmount > 0)
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500 dark:text-slate-400">{{ __('Diskon Kupon') }}</span>
+                        <span class="text-emerald-600 dark:text-emerald-400">-Rp {{ number_format($this->couponDiscountAmount, 0, ',', '.') }}</span>
+                    </div>
+                @endif
+
                 @if ($this->store->service_charge_percent > 0)
                     <div class="flex justify-between text-sm">
                         <span class="text-slate-500 dark:text-slate-400">{{ __('Service Charge') }}

@@ -26,6 +26,8 @@ class Index extends Component
 
     public string $address = '';
 
+    public string $birthdate = '';
+
     public string $notes = '';
 
     public function updatingSearch(): void
@@ -35,7 +37,7 @@ class Index extends Component
 
     public function createCustomer(): void
     {
-        $this->reset(['editingId', 'name', 'phone', 'address', 'notes']);
+        $this->reset(['editingId', 'name', 'phone', 'address', 'birthdate', 'notes']);
         $this->showFormModal = true;
     }
 
@@ -47,6 +49,7 @@ class Index extends Component
         $this->name = $customer->name;
         $this->phone = $customer->phone;
         $this->address = (string) $customer->address;
+        $this->birthdate = $customer->birthdate?->format('Y-m-d') ?? '';
         $this->notes = (string) $customer->notes;
         $this->showFormModal = true;
     }
@@ -62,10 +65,12 @@ class Index extends Component
                 Rule::unique('customers', 'phone')->where('store_id', $storeId)->ignore($this->editingId),
             ],
             'address' => ['nullable', 'string', 'max:500'],
+            'birthdate' => ['nullable', 'date', 'before:today'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $validated['address'] = $validated['address'] !== '' ? $validated['address'] : null;
+        $validated['birthdate'] = $validated['birthdate'] !== '' ? $validated['birthdate'] : null;
         $validated['notes'] = $validated['notes'] !== '' ? $validated['notes'] : null;
 
         if ($this->editingId) {
