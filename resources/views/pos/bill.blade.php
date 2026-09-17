@@ -29,10 +29,14 @@
         .right { text-align: right; }
         .totals td { padding: 1px 0; }
         .print-btn { margin-top: 12px; text-align: center; }
+        .bt-btn { margin-top: 6px; text-align: center; }
+        .bt-btn button { display: none; }
+        .bt-status { margin-top: 6px; text-align: center; font-size: 11px; }
         @media print {
-            .print-btn { display: none; }
+            .print-btn, .bt-btn, .bt-status { display: none; }
         }
     </style>
+    @vite('resources/js/thermal-bluetooth.js')
 </head>
 <body>
     @if ($store->logoUrl())
@@ -118,5 +122,33 @@
     <div class="print-btn">
         <button onclick="window.print()">Cetak</button>
     </div>
+    <div class="bt-btn">
+        <button id="bt-print-btn" onclick="printViaBluetooth(this)">Cetak via Bluetooth</button>
+    </div>
+    <div class="bt-status" id="bt-status"></div>
+
+    <script>
+        window.__receiptLines = @json(\App\Services\ThermalReceiptFormatter::forBill($store, $bill));
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.NichmattThermalPrinter && window.NichmattThermalPrinter.isSupported()) {
+                document.getElementById('bt-print-btn').style.display = 'inline-block';
+            }
+        });
+
+        async function printViaBluetooth(button) {
+            const status = document.getElementById('bt-status');
+            button.disabled = true;
+            status.textContent = 'Menghubungkan ke printer...';
+            try {
+                await window.NichmattThermalPrinter.printLines(window.__receiptLines);
+                status.textContent = 'Bill terkirim ke printer.';
+            } catch (e) {
+                status.textContent = 'Gagal cetak: ' + e.message;
+            } finally {
+                button.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
