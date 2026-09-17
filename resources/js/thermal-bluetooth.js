@@ -53,18 +53,43 @@ async function findWritableCharacteristic(server) {
     );
 }
 
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Windows' Bluetooth stack sometimes drops the GATT connection moments
+// after gatt.connect() resolves, before services can be queried. This is a
+// known flakiness (not a protocol mismatch), so a few retries fix it.
+async function connectGattServer(device, attempts = 4) {
+    let lastError;
+
+    for (let i = 0; i < attempts; i++) {
+        try {
+            const server = await device.gatt.connect();
+            await wait(400);
+
+            if (server.connected) {
+                return server;
+            }
+
+            lastError = new Error('Terhubung sebentar lalu langsung terputus.');
+        } catch (e) {
+            lastError = e;
+        }
+
+        await wait(500);
+    }
+
+    throw lastError;
+}
+
 async function connect() {
     const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: SERVICE_CANDIDATES,
     });
 
-    const server = await device.gatt.connect();
-
-    // Some Bluetooth stacks (notably Windows) need a moment after connecting
-    // before GATT services are actually queryable.
-    await new Promise((resolve) => setTimeout(resolve, 400));
-
+    const server = await connectGattServer(device);
     const characteristic = await findWritableCharacteristic(server);
 
     cachedDevice = device;
