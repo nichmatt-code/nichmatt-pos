@@ -5,6 +5,7 @@ namespace App\Livewire\Inventory;
 use App\Livewire\Concerns\Sortable;
 use App\Models\InventoryItem;
 use App\Models\InventoryMovement;
+use App\Models\Unit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,11 +33,15 @@ class Index extends Component
 
     public string $unit = 'pcs';
 
+    public string $cost_price = '0';
+
     public string $stock_qty = '0';
 
     public string $min_stock = '0';
 
     public string $note = '';
+
+    public string $newUnitName = '';
 
     public ?int $stockItemId = null;
 
@@ -58,8 +63,9 @@ class Index extends Component
 
     public function createItem(): void
     {
-        $this->reset(['editingId', 'name', 'sku', 'unit', 'stock_qty', 'min_stock', 'note']);
+        $this->reset(['editingId', 'name', 'sku', 'unit', 'cost_price', 'stock_qty', 'min_stock', 'note', 'newUnitName']);
         $this->unit = 'pcs';
+        $this->cost_price = '0';
         $this->stock_qty = '0';
         $this->min_stock = '0';
         $this->showFormModal = true;
@@ -73,15 +79,34 @@ class Index extends Component
         $this->name = $item->name;
         $this->sku = (string) $item->sku;
         $this->unit = $item->unit;
+        $this->cost_price = (string) $item->cost_price;
         $this->stock_qty = (string) $item->stock_qty;
         $this->min_stock = (string) $item->min_stock;
         $this->note = (string) $item->note;
+        $this->newUnitName = '';
         $this->showFormModal = true;
     }
 
     public function generateSku(): void
     {
         $this->sku = InventoryItem::generateUniqueSku(Auth::user()->store_id);
+    }
+
+    /**
+     * Quick-create a brand new Unit (rather than picking from the existing
+     * list) and immediately select it for this item's "Satuan" field. It
+     * shows up in the standalone Satuan page right away.
+     */
+    public function addUnit(): void
+    {
+        $validated = $this->validate([
+            'newUnitName' => ['required', 'string', 'max:50'],
+        ], attributes: ['newUnitName' => 'nama satuan']);
+
+        $unit = Unit::firstOrCreate(['name' => $validated['newUnitName']]);
+
+        $this->unit = $unit->name;
+        $this->newUnitName = '';
     }
 
     public function save(): void
@@ -95,6 +120,7 @@ class Index extends Component
                 Rule::unique('inventory_items', 'sku')->where('store_id', $storeId)->ignore($this->editingId),
             ],
             'unit' => ['required', 'string', 'max:50'],
+            'cost_price' => ['required', 'integer', 'min:0'],
             'stock_qty' => ['required', 'integer', 'min:0'],
             'min_stock' => ['required', 'integer', 'min:0'],
             'note' => ['nullable', 'string', 'max:255'],
@@ -165,6 +191,7 @@ class Index extends Component
                 ->when($this->filterLowStockOnly, fn ($query) => $query->whereColumn('stock_qty', '<=', 'min_stock'))
                 ->orderBy($this->sortField ?: 'name', $this->sortDirection)
                 ->paginate(15),
+            'units' => Unit::query()->orderBy('name')->get(),
         ]);
     }
 }

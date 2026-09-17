@@ -70,7 +70,7 @@ new class extends Component
     @php
         $user = auth()->user();
         $inOperational = request()->routeIs('pos') || request()->routeIs('preparation.index') || request()->routeIs('stock-opname.*');
-        $inProduct = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('tags.index') || request()->routeIs('inventory.index') || request()->routeIs('packages.index') || request()->routeIs('coupons.index');
+        $inProduct = request()->routeIs('products.index') || request()->routeIs('categories.index') || request()->routeIs('tags.index') || request()->routeIs('inventory.index') || request()->routeIs('units.index') || request()->routeIs('packages.index') || request()->routeIs('coupons.index');
         $inAdministration = request()->routeIs('team.index') || request()->routeIs('branch.settings') || request()->routeIs('customers.index');
         $hasProduct = $user->hasPermission(\App\Permission::Products)
             || $user->hasPermission(\App\Permission::Categories)
@@ -215,6 +215,9 @@ new class extends Component
                                 <x-dropdown-link :href="route('inventory.index')" wire:navigate>
                                     {{ __('Inventory') }}
                                 </x-dropdown-link>
+                                <x-dropdown-link :href="route('units.index')" wire:navigate>
+                                    {{ __('Satuan') }}
+                                </x-dropdown-link>
                             @endif
                             @if ($user->hasPermission(\App\Permission::Products))
                                 <x-dropdown-link :href="route('tags.index')" wire:navigate>
@@ -330,6 +333,9 @@ new class extends Component
                 @if ($user->hasPermission(\App\Permission::Inventory))
                     <x-responsive-nav-link :href="route('inventory.index')" :active="request()->routeIs('inventory.index')" wire:navigate>
                         {{ __('Inventory') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('units.index')" :active="request()->routeIs('units.index')" wire:navigate>
+                        {{ __('Satuan') }}
                     </x-responsive-nav-link>
                 @endif
                 @if ($user->hasPermission(\App\Permission::Products))

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Inventory\Index;
 use App\Models\InventoryItem;
 use App\Models\Store;
+use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -49,6 +50,56 @@ class InventoryTest extends TestCase
         $this->assertSame($store->id, $item->store_id);
         $this->assertSame(50, $item->stock_qty);
         $this->assertSame(10, $item->min_stock);
+    }
+
+    public function test_owner_can_set_a_cost_price_for_an_inventory_item(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Index::class)
+            ->call('createItem')
+            ->set('name', 'Tepung')
+            ->set('unit', 'kg')
+            ->set('cost_price', '12000')
+            ->set('stock_qty', '50')
+            ->set('min_stock', '10')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $item = InventoryItem::where('name', 'Tepung')->firstOrFail();
+        $this->assertSame(12000, $item->cost_price);
+    }
+
+    public function test_owner_can_quick_create_a_new_unit_while_editing_an_inventory_item(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+
+        Livewire::actingAs($owner)
+            ->test(Index::class)
+            ->call('createItem')
+            ->set('newUnitName', 'dus')
+            ->call('addUnit')
+            ->assertHasNoErrors()
+            ->assertSet('unit', 'dus')
+            ->assertSet('newUnitName', '');
+
+        $this->assertDatabaseHas('units', ['store_id' => $store->id, 'name' => 'dus']);
+    }
+
+    public function test_editing_an_item_whose_unit_is_not_in_the_units_list_still_shows_it(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+        $item = InventoryItem::create(['store_id' => $store->id, 'name' => 'Beras', 'unit' => 'karung', 'stock_qty' => 50, 'min_stock' => 10]);
+        Unit::create(['store_id' => $store->id, 'name' => 'kg']);
+
+        Livewire::actingAs($owner)
+            ->test(Index::class)
+            ->call('editItem', $item->id)
+            ->assertSee('karung', false);
     }
 
     public function test_owner_can_edit_an_inventory_item(): void

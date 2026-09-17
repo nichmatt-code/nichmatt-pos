@@ -23,6 +23,7 @@
                     <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500 bg-slate-50/70 dark:bg-slate-800/40">
                         <x-th-sort field="name" label="{{ __('Barang') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                         <x-th-sort field="stock_qty" label="{{ __('Stok') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
+                        <x-th-sort field="cost_price" label="{{ __('Harga Modal') }}" :sortField="$sortField" :sortDirection="$sortDirection" />
                         <th class="px-6 py-3">{{ __('Catatan') }}</th>
                         <th class="px-6 py-3"></th>
                     </tr>
@@ -45,6 +46,7 @@
                                     <span class="text-slate-900 dark:text-slate-100">{{ $item->stock_qty }} {{ $item->unit }}</span>
                                 @endif
                             </td>
+                            <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400">Rp {{ number_format($item->cost_price, 0, ',', '.') }}</td>
                             <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400">{{ $item->note ?: '-' }}</td>
                             <td class="px-6 py-3.5 text-right whitespace-nowrap">
                                 <div class="inline-flex items-center gap-1">
@@ -62,7 +64,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada barang inventory.') }}</td>
+                            <td colspan="5" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada barang inventory.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -100,7 +102,19 @@
                     </div>
                     <div>
                         <x-input-label for="unit" value="Satuan" />
-                        <x-text-input wire:model="unit" id="unit" type="text" class="block w-full" placeholder="kg, liter, karung" />
+                        <select wire:model="unit" id="unit" class="block w-full mt-1 border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg shadow-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100">
+                            @if ($unit !== '' && ! $units->contains('name', $unit))
+                                <option value="{{ $unit }}">{{ $unit }}</option>
+                            @endif
+                            @foreach ($units as $unitOption)
+                                <option value="{{ $unitOption->name }}">{{ $unitOption->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="mt-1.5 flex gap-2">
+                            <x-text-input wire:model="newUnitName" wire:keydown.enter.prevent="addUnit" type="text" class="block w-full text-sm" placeholder="Satuan baru, mis. dus" />
+                            <button type="button" wire:click="addUnit" class="shrink-0 px-3 py-2 text-xs font-medium text-brand-700 bg-brand-50 rounded-lg hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-500/10 dark:hover:bg-brand-500/20">{{ __('Tambah') }}</button>
+                        </div>
+                        <x-input-error :messages="$errors->get('newUnitName')" class="mt-1" />
                     </div>
                 </div>
 
@@ -118,6 +132,13 @@
                         <x-text-input wire:model="min_stock" id="min_stock" type="number" class="block w-full" />
                         <x-input-error :messages="$errors->get('min_stock')" class="mt-2" />
                     </div>
+                </div>
+
+                <div>
+                    <x-input-label for="cost_price" value="Harga Modal (per satuan)" />
+                    <x-text-input wire:model="cost_price" id="cost_price" type="number" class="block w-full" />
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Dipakai untuk menghitung nilai kerugian di Laporan Monitor Inventory.') }}</p>
+                    <x-input-error :messages="$errors->get('cost_price')" class="mt-2" />
                 </div>
 
                 <div>

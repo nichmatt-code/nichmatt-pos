@@ -19,6 +19,7 @@ class InventoryItem extends Model
         'name',
         'sku',
         'unit',
+        'cost_price',
         'stock_qty',
         'min_stock',
         'note',
@@ -28,6 +29,7 @@ class InventoryItem extends Model
     protected function casts(): array
     {
         return [
+            'cost_price' => 'integer',
             'stock_qty' => 'integer',
             'min_stock' => 'integer',
             'is_active' => 'boolean',

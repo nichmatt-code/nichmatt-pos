@@ -54,6 +54,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permission:products');
         Route::view('inventory', 'inventory.index')->name('inventory.index')
             ->middleware('permission:inventory');
+        Route::view('units', 'units.index')->name('units.index')
+            ->middleware('permission:inventory');
         Route::view('customers', 'customers.index')->name('customers.index')
             ->middleware('permission:customers');
         Route::view('stock-opname', 'stock-opname.index')->name('stock-opname.index')
@@ -64,6 +66,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::view('reports/sales', 'reports.sales')->name('reports.sales')
             ->middleware('permission:reports');
         Route::view('reports/stock-opname', 'reports.stock-opname')->name('reports.stock-opname')
+            ->middleware('permission:reports');
+        Route::view('reports/inventory-monitor', 'reports.inventory-monitor')->name('reports.inventory-monitor')
             ->middleware('permission:reports');
         Route::view('preparation', 'preparation.index')->name('preparation.index')
             ->middleware('permission:preparation');
