@@ -7,7 +7,9 @@ use App\Models\Customer;
 use App\Models\InventoryMovement;
 use App\Models\LossRecord;
 use App\Models\LossRecordItem;
+use App\Models\Package;
 use App\Models\Product;
+use App\Models\Promo;
 use App\Models\QrisPayment;
 use App\Models\SelfOrder;
 use App\Models\StockMovement;
@@ -24,7 +26,13 @@ use Livewire\Component;
 
 class Terminal extends Component
 {
-    /** @var array<int, array{product_id: int, name: string, price: int, cost_price: int, qty: int, max_qty: int, note: string, unlimited: bool}> */
+    /**
+     * Keyed by product_id for a normal product line, or "pkg_{package_id}"
+     * for a package line, or "gift_{promo_id}" for an auto-added free item
+     * from a gift promo.
+     *
+     * @var array<int|string, array{product_id: ?int, package_id: ?int, name: string, price: int, cost_price: int, qty: int, max_qty: int, note: string, unlimited: bool, type: string, is_gift?: bool}>
+     */
     public array $cart = [];
 
     public string $search = '';
@@ -146,13 +154,170 @@ class Terminal extends Component
         } else {
             $this->cart[$product->id] = [
                 'product_id' => $product->id,
+                'package_id' => null,
                 'name' => $product->name,
-                'price' => $product->price,
+                'price' => $this->effectivePriceFor($product),
                 'cost_price' => $product->cost_price,
                 'qty' => $qty,
                 'max_qty' => $maxQty,
                 'note' => $note,
                 'unlimited' => $product->is_unlimited_stock,
+                'type' => 'product',
+            ];
+        }
+
+        $this->syncGiftPromos();
+    }
+
+    /**
+     * Add one of a package to the cart as a single line (its own name and
+     * price) - the component products it's made of aren't shown separately,
+     * but their stock is still deducted individually once the sale is
+     * finalized.
+     */
+    public function addPackageToCart(int $packageId): void
+    {
+        $package = Package::with('items.product')->where('is_active', true)->findOrFail($packageId);
+
+        $maxQty = $package->maxSellable();
+
+        if ($maxQty < 1) {
+            $this->addError('cart', "Stok untuk Paket {$package->name} tidak cukup.");
+
+            return;
+        }
+
+        $key = 'pkg_'.$package->id;
+
+        if (isset($this->cart[$key])) {
+            $this->cart[$key]['qty'] = min($this->cart[$key]['qty'] + 1, $this->cart[$key]['max_qty']);
+        } else {
+            $this->cart[$key] = [
+                'product_id' => null,
+                'package_id' => $package->id,
+                'name' => $package->name,
+                'price' => $package->price,
+                'cost_price' => $package->totalCostPrice(),
+                'qty' => 1,
+                'max_qty' => $maxQty,
+                'note' => '',
+                'unlimited' => false,
+                'type' => 'package',
+            ];
+        }
+
+        $this->dispatch('product-added', message: "{$package->name} ditambahkan ke keranjang.");
+    }
+
+    /**
+     * The price a product currently sells for, applying an active discount
+     * promo (if any) on top of its normal price.
+     */
+    private function effectivePriceFor(Product $product): int
+    {
+        $promo = Promo::query()
+            ->where('product_id', $product->id)
+            ->where('type', Promo::TYPE_DISCOUNT)
+            ->where('is_active', true)
+            ->get()
+            ->first(fn (Promo $promo) => $promo->isCurrentlyActive());
+
+        return $promo ? $promo->discountedPriceFor($product->price) : $product->price;
+    }
+
+    /**
+     * Re-derive every product line's price from the current product +
+     * active discount promo (not from client-submitted cart state), used
+     * when the store doesn't allow the cashier to edit prices manually.
+     * Package lines (fixed by the package's own price) and gift lines
+     * (always free) are left untouched.
+     */
+    private function reassertCartPrices(): void
+    {
+        $productIds = collect($this->cart)
+            ->filter(fn (array $item) => ($item['type'] ?? 'product') === 'product' && empty($item['is_gift']))
+            ->pluck('product_id')
+            ->filter()
+            ->all();
+
+        if (empty($productIds)) {
+            return;
+        }
+
+        $products = Product::query()->whereIn('id', $productIds)->get()->keyBy('id');
+
+        foreach ($this->cart as $key => $item) {
+            if (($item['type'] ?? 'product') !== 'product' || ! empty($item['is_gift'])) {
+                continue;
+            }
+
+            $product = $products->get($item['product_id']);
+
+            if ($product) {
+                $this->cart[$key]['price'] = $this->effectivePriceFor($product);
+            }
+        }
+    }
+
+    /**
+     * Recompute every "buy X get Y free" gift promo against the cart's
+     * current product quantities, adding/adjusting/removing the auto-added
+     * free line items to match. Called after any cart mutation so the
+     * earned gift always reflects what's actually in the cart right now.
+     */
+    private function syncGiftPromos(): void
+    {
+        foreach ($this->cart as $key => $item) {
+            if (! empty($item['is_gift'])) {
+                unset($this->cart[$key]);
+            }
+        }
+
+        $gifts = Promo::query()
+            ->where('type', Promo::TYPE_GIFT)
+            ->where('is_active', true)
+            ->with('giftProduct')
+            ->get()
+            ->filter(fn (Promo $promo) => $promo->isCurrentlyActive());
+
+        foreach ($gifts as $promo) {
+            $triggerItem = $this->cart[$promo->product_id] ?? null;
+
+            if (! $triggerItem || ($triggerItem['type'] ?? null) !== 'product') {
+                continue;
+            }
+
+            $earnedQty = intdiv($triggerItem['qty'], max(1, $promo->min_qty)) * $promo->gift_qty;
+
+            if ($earnedQty <= 0) {
+                continue;
+            }
+
+            $giftProduct = $promo->giftProduct;
+
+            if (! $giftProduct || ! $giftProduct->isAvailable()) {
+                continue;
+            }
+
+            $maxQty = $giftProduct->is_unlimited_stock ? PHP_INT_MAX : $giftProduct->stock_qty;
+            $qty = min($earnedQty, $maxQty);
+
+            if ($qty < 1) {
+                continue;
+            }
+
+            $this->cart['gift_'.$promo->id] = [
+                'product_id' => $giftProduct->id,
+                'package_id' => null,
+                'name' => $giftProduct->name.' ('.__('Hadiah Promo').')',
+                'price' => 0,
+                'cost_price' => $giftProduct->cost_price,
+                'qty' => $qty,
+                'max_qty' => $qty,
+                'note' => '',
+                'unlimited' => $giftProduct->is_unlimited_stock,
+                'type' => 'product',
+                'is_gift' => true,
             ];
         }
     }
@@ -184,29 +349,34 @@ class Terminal extends Component
         $this->addToCart($product->id);
     }
 
-    public function incrementQty(int $productId): void
+    public function incrementQty(int|string $cartKey): void
     {
-        if (isset($this->cart[$productId]) && $this->cart[$productId]['qty'] < $this->cart[$productId]['max_qty']) {
-            $this->cart[$productId]['qty']++;
+        if (isset($this->cart[$cartKey]) && $this->cart[$cartKey]['qty'] < $this->cart[$cartKey]['max_qty']) {
+            $this->cart[$cartKey]['qty']++;
         }
+
+        $this->syncGiftPromos();
     }
 
-    public function decrementQty(int $productId): void
+    public function decrementQty(int|string $cartKey): void
     {
-        if (! isset($this->cart[$productId])) {
+        if (! isset($this->cart[$cartKey])) {
             return;
         }
 
-        $this->cart[$productId]['qty']--;
+        $this->cart[$cartKey]['qty']--;
 
-        if ($this->cart[$productId]['qty'] <= 0) {
-            unset($this->cart[$productId]);
+        if ($this->cart[$cartKey]['qty'] <= 0) {
+            unset($this->cart[$cartKey]);
         }
+
+        $this->syncGiftPromos();
     }
 
-    public function removeFromCart(int $productId): void
+    public function removeFromCart(int|string $cartKey): void
     {
-        unset($this->cart[$productId]);
+        unset($this->cart[$cartKey]);
+        $this->syncGiftPromos();
     }
 
     public function toggleTag(int $tagId): void
@@ -307,6 +477,39 @@ class Terminal extends Component
         $skipped = [];
 
         foreach ($selfOrder->items as $item) {
+            if ($item->package_id) {
+                $package = Package::with('items.product')->where('is_active', true)->find($item->package_id);
+                $maxQty = $package?->maxSellable() ?? 0;
+
+                if (! $package || $maxQty < 1) {
+                    $skipped[] = $item->product_name;
+
+                    continue;
+                }
+
+                $qty = min($item->qty, $maxQty);
+                $key = 'pkg_'.$package->id;
+
+                if (isset($this->cart[$key])) {
+                    $this->cart[$key]['qty'] = min($this->cart[$key]['qty'] + $qty, $maxQty);
+                } else {
+                    $this->cart[$key] = [
+                        'product_id' => null,
+                        'package_id' => $package->id,
+                        'name' => $package->name,
+                        'price' => $package->price,
+                        'cost_price' => $package->totalCostPrice(),
+                        'qty' => $qty,
+                        'max_qty' => $maxQty,
+                        'note' => '',
+                        'unlimited' => false,
+                        'type' => 'package',
+                    ];
+                }
+
+                continue;
+            }
+
             $product = $item->product_id ? Product::query()->where('is_active', true)->find($item->product_id) : null;
 
             if (! $product || ! $product->isAvailable()) {
@@ -323,16 +526,20 @@ class Terminal extends Component
             } else {
                 $this->cart[$product->id] = [
                     'product_id' => $product->id,
+                    'package_id' => null,
                     'name' => $product->name,
-                    'price' => $product->price,
+                    'price' => $this->effectivePriceFor($product),
                     'cost_price' => $product->cost_price,
                     'qty' => $qty,
                     'max_qty' => $maxQty,
                     'note' => (string) $item->note,
                     'unlimited' => $product->is_unlimited_stock,
+                    'type' => 'product',
                 ];
             }
         }
+
+        $this->syncGiftPromos();
 
         $this->customerName = (string) $selfOrder->customer_name;
         $this->selectedCustomerId = null;
@@ -446,15 +653,11 @@ class Terminal extends Component
 
         // The price input is only rendered when the store allows editing it,
         // but a forged request could still set cart.*.price directly - so
-        // reassert the real product price server-side whenever it's off.
+        // reassert the real (promo-aware) price server-side whenever it's
+        // off. Package and gift lines aren't touched - their price comes
+        // from the package/promo definition, not a Product row.
         if (! $this->store->allow_price_edit) {
-            $realPrices = Product::query()->whereIn('id', array_column($this->cart, 'product_id'))->pluck('price', 'id');
-
-            foreach ($this->cart as $productId => $item) {
-                if (isset($realPrices[$productId])) {
-                    $this->cart[$productId]['price'] = $realPrices[$productId];
-                }
-            }
+            $this->reassertCartPrices();
         }
 
         if ($this->discount > $this->subtotal) {
@@ -522,9 +725,12 @@ class Terminal extends Component
             ]);
 
             foreach ($cart as $item) {
+                $isPackage = ($item['type'] ?? 'product') === 'package';
+
                 TransactionItem::create([
                     'transaction_id' => $transaction->id,
-                    'product_id' => $item['product_id'],
+                    'product_id' => $isPackage ? null : $item['product_id'],
+                    'package_id' => $isPackage ? $item['package_id'] : null,
                     'product_name' => $item['name'],
                     'price' => $item['price'],
                     'cost_price' => $item['cost_price'],
@@ -533,33 +739,13 @@ class Terminal extends Component
                     'subtotal' => $item['price'] * $item['qty'],
                 ]);
 
-                $product = Product::with('ingredients')->findOrFail($item['product_id']);
+                if ($isPackage) {
+                    $this->deductPackageStock($item['package_id'], $item['qty'], $meta['user_id'], $transaction->transaction_no);
 
-                if (empty($item['unlimited'])) {
-                    $product->decrement('stock_qty', $item['qty']);
-
-                    StockMovement::create([
-                        'product_id' => $item['product_id'],
-                        'user_id' => $meta['user_id'],
-                        'type' => 'out',
-                        'qty' => -$item['qty'],
-                        'note' => 'Penjualan '.$transaction->transaction_no,
-                    ]);
+                    continue;
                 }
 
-                foreach ($product->ingredients as $ingredient) {
-                    $qtyUsed = $ingredient->pivot->qty_used * $item['qty'];
-
-                    $ingredient->decrement('stock_qty', $qtyUsed);
-
-                    InventoryMovement::create([
-                        'inventory_item_id' => $ingredient->id,
-                        'user_id' => $meta['user_id'],
-                        'type' => 'out',
-                        'qty' => -$qtyUsed,
-                        'note' => 'Penjualan '.$transaction->transaction_no,
-                    ]);
-                }
+                $this->deductProductStock($item['product_id'], $item['qty'], empty($item['unlimited']), $meta['user_id'], $transaction->transaction_no);
             }
 
             if ($meta['claimed_self_order_id']) {
@@ -568,6 +754,62 @@ class Terminal extends Component
 
             return $transaction;
         });
+    }
+
+    /**
+     * Deduct one product's own stock (unless unlimited) and its ingredient
+     * inventory - the effect of selling `$qty` of it, whether that came
+     * from a direct cart line or as a component inside a sold package.
+     */
+    private function deductProductStock(int $productId, int $qty, bool $deductOwnStock, ?int $userId, string $note): void
+    {
+        $product = Product::with('ingredients')->findOrFail($productId);
+
+        if ($deductOwnStock && ! $product->is_unlimited_stock) {
+            $product->decrement('stock_qty', $qty);
+
+            StockMovement::create([
+                'product_id' => $productId,
+                'user_id' => $userId,
+                'type' => 'out',
+                'qty' => -$qty,
+                'note' => 'Penjualan '.$note,
+            ]);
+        }
+
+        foreach ($product->ingredients as $ingredient) {
+            $qtyUsed = $ingredient->pivot->qty_used * $qty;
+
+            $ingredient->decrement('stock_qty', $qtyUsed);
+
+            InventoryMovement::create([
+                'inventory_item_id' => $ingredient->id,
+                'user_id' => $userId,
+                'type' => 'out',
+                'qty' => -$qtyUsed,
+                'note' => 'Penjualan '.$note,
+            ]);
+        }
+    }
+
+    /**
+     * Selling `$packageQty` of a package deducts every one of its component
+     * products (and their own ingredients) by qty-per-package * packages
+     * sold - the package itself has no stock of its own.
+     */
+    private function deductPackageStock(int $packageId, int $packageQty, ?int $userId, string $note): void
+    {
+        $package = Package::with('items')->findOrFail($packageId);
+
+        foreach ($package->items as $packageItem) {
+            $this->deductProductStock(
+                $packageItem->product_id,
+                $packageItem->qty * $packageQty,
+                true,
+                $userId,
+                'Paket '.$package->name.' - '.$note,
+            );
+        }
     }
 
     /**
@@ -596,13 +838,7 @@ class Terminal extends Component
         }
 
         if (! $this->store->allow_price_edit) {
-            $realPrices = Product::query()->whereIn('id', array_column($this->cart, 'product_id'))->pluck('price', 'id');
-
-            foreach ($this->cart as $productId => $item) {
-                if (isset($realPrices[$productId])) {
-                    $this->cart[$productId]['price'] = $realPrices[$productId];
-                }
-            }
+            $this->reassertCartPrices();
         }
 
         if ($this->discount > $this->subtotal) {
@@ -935,11 +1171,16 @@ class Terminal extends Component
             ->limit(40)
             ->get();
 
+        $activePromos = Promo::activeForStore($this->store->id);
+
         return view('livewire.pos.terminal', [
             'products' => $products,
             'categories' => Category::query()->orderBy('name')->get(),
             'productGroups' => $this->activeCategoryId ? null : $products->groupBy(fn ($product) => $product->category_id ?? 0),
             'tags' => Tag::query()->orderBy('name')->get(),
+            'packages' => Package::with('items.product')->where('is_active', true)->orderBy('name')->get(),
+            'promosByProduct' => $activePromos->where('type', Promo::TYPE_DISCOUNT)->keyBy('product_id'),
+            'giftPromosByProduct' => $activePromos->where('type', Promo::TYPE_GIFT)->groupBy('product_id'),
             'lastTransaction' => $this->lastTransactionId
                 ? Transaction::with('items')->find($this->lastTransactionId)
                 : null,

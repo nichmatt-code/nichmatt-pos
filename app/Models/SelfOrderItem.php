@@ -15,6 +15,7 @@ class SelfOrderItem extends Model
     protected $fillable = [
         'self_order_id',
         'product_id',
+        'package_id',
         'product_name',
         'price',
         'qty',
@@ -39,5 +40,10 @@ class SelfOrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(Package::class);
     }
 }

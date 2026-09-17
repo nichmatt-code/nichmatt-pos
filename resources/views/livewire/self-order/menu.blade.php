@@ -37,6 +37,17 @@
                     <x-text-input wire:model.live.debounce.300ms="search" type="text" class="w-full pl-10" placeholder="Cari menu..." />
                 </div>
 
+                @if ($packages->isNotEmpty())
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-2">{{ __('Paket') }}</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            @foreach ($packages as $package)
+                                @include('livewire.self-order.package-card', ['package' => $package])
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 @if ($categories->isNotEmpty())
                     <div class="flex flex-wrap gap-1.5">
                         <button
@@ -137,25 +148,38 @@
                 </div>
 
                 <div class="flex-1 space-y-2 max-h-96 overflow-y-auto">
-                    @forelse ($cart as $productId => $item)
-                        <div wire:key="cart-{{ $productId }}" class="border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                    @forelse ($cart as $cartKey => $item)
+                        <div wire:key="cart-{{ $cartKey }}" class="border-b border-slate-100 dark:border-slate-800 pb-2.5">
                             <div class="flex items-center justify-between text-sm">
                                 <div class="flex-1 pr-2">
-                                    <div class="text-slate-900 dark:text-slate-100">{{ $item['name'] }}</div>
+                                    <div class="text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                        {{ $item['name'] }}
+                                        @if (($item['type'] ?? 'product') === 'package')
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">{{ __('PAKET') }}</span>
+                                        @elseif (! empty($item['is_gift']))
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">{{ __('GRATIS') }}</span>
+                                        @endif
+                                    </div>
                                     <div class="text-slate-500 dark:text-slate-400">Rp {{ number_format($item['price'], 0, ',', '.') }}</div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <button type="button" wire:click="decrementQty({{ $productId }})" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">-</button>
-                                    <span class="w-6 text-center font-medium text-slate-900 dark:text-slate-100">{{ $item['qty'] }}</span>
-                                    <button type="button" wire:click="incrementQty({{ $productId }})" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">+</button>
-                                </div>
+                                @if (! empty($item['is_gift']))
+                                    <span class="text-xs text-slate-400 dark:text-slate-500 px-1">x{{ $item['qty'] }}</span>
+                                @else
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" wire:click="decrementQty('{{ $cartKey }}')" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">-</button>
+                                        <span class="w-6 text-center font-medium text-slate-900 dark:text-slate-100">{{ $item['qty'] }}</span>
+                                        <button type="button" wire:click="incrementQty('{{ $cartKey }}')" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">+</button>
+                                    </div>
+                                @endif
                             </div>
-                            <input
-                                type="text"
-                                wire:model.blur="cart.{{ $productId }}.note"
-                                placeholder="Catatan (opsional)"
-                                class="mt-1.5 w-full text-xs border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-                            />
+                            @if (empty($item['is_gift']))
+                                <input
+                                    type="text"
+                                    wire:model.blur="cart.{{ $cartKey }}.note"
+                                    placeholder="Catatan (opsional)"
+                                    class="mt-1.5 w-full text-xs border-slate-200 bg-slate-50/60 focus:bg-white focus:border-brand-500 focus:ring-brand-500 rounded-lg placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:focus:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                                />
+                            @endif
                         </div>
                     @empty
                         <p class="text-sm text-slate-400 dark:text-slate-500 py-6 text-center">{{ __('Belum ada item.') }}</p>

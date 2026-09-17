@@ -3,7 +3,9 @@
 namespace App\Livewire\SelfOrder;
 
 use App\Models\Category;
+use App\Models\Package;
 use App\Models\Product;
+use App\Models\Promo;
 use App\Models\SelfOrder;
 use App\Models\SelfOrderItem;
 use App\Models\Store;
@@ -17,7 +19,13 @@ class Menu extends Component
 {
     public Store $store;
 
-    /** @var array<int, array{product_id: int, name: string, price: int, qty: int, max_qty: int, note: string}> */
+    /**
+     * Keyed by product_id for a normal item, "pkg_{package_id}" for a
+     * package, or "gift_{promo_id}" for an auto-added free item earned
+     * from a gift promo.
+     *
+     * @var array<int|string, array{product_id: ?int, package_id: ?int, name: string, price: int, qty: int, max_qty: int, note: string, type: string, is_gift?: bool}>
+     */
     public array $cart = [];
 
     public string $search = '';
@@ -113,41 +121,168 @@ class Menu extends Component
         } else {
             $this->cart[$product->id] = [
                 'product_id' => $product->id,
+                'package_id' => null,
                 'name' => $product->name,
-                'price' => $product->price,
+                'price' => $this->effectivePriceFor($product),
                 'qty' => $qty,
                 'max_qty' => $maxQty,
                 'note' => $note,
+                'type' => 'product',
             ];
         }
 
+        $this->syncGiftPromos();
         $this->dispatch('product-added', message: "{$product->name} ditambahkan ke pesanan.");
         $this->closeProductModal();
     }
 
-    public function incrementQty(int $productId): void
+    /**
+     * Add one of a package to the order as a single line - the products it
+     * contains aren't shown separately, but their stock is still deducted
+     * individually once the cashier completes the sale.
+     */
+    public function addPackageToCart(int $packageId): void
     {
-        if (isset($this->cart[$productId]) && $this->cart[$productId]['qty'] < $this->cart[$productId]['max_qty']) {
-            $this->cart[$productId]['qty']++;
-        }
-    }
+        $package = Package::query()
+            ->where('store_id', $this->store->id)
+            ->where('is_active', true)
+            ->with('items.product')
+            ->findOrFail($packageId);
 
-    public function decrementQty(int $productId): void
-    {
-        if (! isset($this->cart[$productId])) {
+        $maxQty = $package->maxSellable();
+
+        if ($maxQty < 1) {
+            $this->addError('cart', "Paket {$package->name} sedang tidak tersedia.");
+
             return;
         }
 
-        $this->cart[$productId]['qty']--;
+        $key = 'pkg_'.$package->id;
 
-        if ($this->cart[$productId]['qty'] <= 0) {
-            unset($this->cart[$productId]);
+        if (isset($this->cart[$key])) {
+            $this->cart[$key]['qty'] = min($this->cart[$key]['qty'] + 1, $this->cart[$key]['max_qty']);
+        } else {
+            $this->cart[$key] = [
+                'product_id' => null,
+                'package_id' => $package->id,
+                'name' => $package->name,
+                'price' => $package->price,
+                'qty' => 1,
+                'max_qty' => $maxQty,
+                'note' => '',
+                'type' => 'package',
+            ];
+        }
+
+        $this->dispatch('product-added', message: "{$package->name} ditambahkan ke pesanan.");
+    }
+
+    /**
+     * The price a product currently sells for, applying an active discount
+     * promo (if any) on top of its normal price.
+     */
+    private function effectivePriceFor(Product $product): int
+    {
+        $promo = Promo::query()
+            ->where('store_id', $this->store->id)
+            ->where('product_id', $product->id)
+            ->where('type', Promo::TYPE_DISCOUNT)
+            ->where('is_active', true)
+            ->get()
+            ->first(fn (Promo $promo) => $promo->isCurrentlyActive());
+
+        return $promo ? $promo->discountedPriceFor($product->price) : $product->price;
+    }
+
+    /**
+     * Recompute every "buy X get Y free" gift promo against the cart's
+     * current product quantities, so the customer sees the free item(s)
+     * they've earned before even confirming the order.
+     */
+    private function syncGiftPromos(): void
+    {
+        foreach ($this->cart as $key => $item) {
+            if (! empty($item['is_gift'])) {
+                unset($this->cart[$key]);
+            }
+        }
+
+        $gifts = Promo::query()
+            ->where('store_id', $this->store->id)
+            ->where('type', Promo::TYPE_GIFT)
+            ->where('is_active', true)
+            ->with('giftProduct')
+            ->get()
+            ->filter(fn (Promo $promo) => $promo->isCurrentlyActive());
+
+        foreach ($gifts as $promo) {
+            $triggerItem = $this->cart[$promo->product_id] ?? null;
+
+            if (! $triggerItem || ($triggerItem['type'] ?? null) !== 'product') {
+                continue;
+            }
+
+            $earnedQty = intdiv($triggerItem['qty'], max(1, $promo->min_qty)) * $promo->gift_qty;
+
+            if ($earnedQty <= 0) {
+                continue;
+            }
+
+            $giftProduct = $promo->giftProduct;
+
+            if (! $giftProduct || ! $giftProduct->isAvailable()) {
+                continue;
+            }
+
+            $maxQty = $giftProduct->is_unlimited_stock ? PHP_INT_MAX : $giftProduct->stock_qty;
+            $qty = min($earnedQty, $maxQty);
+
+            if ($qty < 1) {
+                continue;
+            }
+
+            $this->cart['gift_'.$promo->id] = [
+                'product_id' => $giftProduct->id,
+                'package_id' => null,
+                'name' => $giftProduct->name.' ('.__('Hadiah Promo').')',
+                'price' => 0,
+                'qty' => $qty,
+                'max_qty' => $qty,
+                'note' => '',
+                'type' => 'product',
+                'is_gift' => true,
+            ];
         }
     }
 
-    public function removeFromCart(int $productId): void
+    public function incrementQty(int|string $cartKey): void
     {
-        unset($this->cart[$productId]);
+        if (isset($this->cart[$cartKey]) && $this->cart[$cartKey]['qty'] < $this->cart[$cartKey]['max_qty']) {
+            $this->cart[$cartKey]['qty']++;
+        }
+
+        $this->syncGiftPromos();
+    }
+
+    public function decrementQty(int|string $cartKey): void
+    {
+        if (! isset($this->cart[$cartKey])) {
+            return;
+        }
+
+        $this->cart[$cartKey]['qty']--;
+
+        if ($this->cart[$cartKey]['qty'] <= 0) {
+            unset($this->cart[$cartKey]);
+        }
+
+        $this->syncGiftPromos();
+    }
+
+    public function removeFromCart(int|string $cartKey): void
+    {
+        unset($this->cart[$cartKey]);
+        $this->syncGiftPromos();
     }
 
     public function toggleTag(int $tagId): void
@@ -195,9 +330,20 @@ class Menu extends Component
             ]);
 
             foreach ($this->cart as $item) {
+                // Gift lines aren't persisted - they're re-derived from the
+                // trigger product's quantity when the cashier claims this
+                // order, so the earned amount always reflects promos that
+                // are still active at claim time, not order time.
+                if (! empty($item['is_gift'])) {
+                    continue;
+                }
+
+                $isPackage = ($item['type'] ?? 'product') === 'package';
+
                 SelfOrderItem::create([
                     'self_order_id' => $selfOrder->id,
-                    'product_id' => $item['product_id'],
+                    'product_id' => $isPackage ? null : $item['product_id'],
+                    'package_id' => $isPackage ? $item['package_id'] : null,
                     'product_name' => $item['name'],
                     'price' => $item['price'],
                     'qty' => $item['qty'],
@@ -240,11 +386,16 @@ class Menu extends Component
             ->limit(40)
             ->get();
 
+        $activePromos = Promo::activeForStore($this->store->id);
+
         return view('livewire.self-order.menu', [
             'products' => $products,
             'categories' => Category::query()->where('store_id', $this->store->id)->orderBy('name')->get(),
             'productGroups' => $this->activeCategoryId ? null : $products->groupBy(fn ($product) => $product->category_id ?? 0),
             'tags' => Tag::query()->where('store_id', $this->store->id)->orderBy('name')->get(),
+            'packages' => Package::query()->where('store_id', $this->store->id)->where('is_active', true)->with('items.product')->orderBy('name')->get(),
+            'promosByProduct' => $activePromos->where('type', Promo::TYPE_DISCOUNT)->keyBy('product_id'),
+            'giftPromosByProduct' => $activePromos->where('type', Promo::TYPE_GIFT)->groupBy('product_id'),
         ]);
     }
 }

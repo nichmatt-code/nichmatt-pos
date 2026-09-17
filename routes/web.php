@@ -48,6 +48,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permission:categories');
         Route::view('tags', 'tags.index')->name('tags.index')
             ->middleware('permission:products');
+        Route::view('packages', 'packages.index')->name('packages.index')
+            ->middleware('permission:products');
+        Route::view('promos', 'promos.index')->name('promos.index')
+            ->middleware('permission:products');
         Route::view('inventory', 'inventory.index')->name('inventory.index')
             ->middleware('permission:inventory');
         Route::view('customers', 'customers.index')->name('customers.index')
