@@ -69,6 +69,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('permission:reports');
         Route::view('reports/inventory-monitor', 'reports.inventory-monitor')->name('reports.inventory-monitor')
             ->middleware('permission:reports');
+        Route::view('reports/inventory-loss', 'reports.inventory-loss')->name('reports.inventory-loss')
+            ->middleware('permission:reports');
+        Route::view('reports/loss-history', 'reports.loss-history')->name('reports.loss-history')
+            ->middleware('permission:reports');
         Route::view('preparation', 'preparation.index')->name('preparation.index')
             ->middleware('permission:preparation');
 
