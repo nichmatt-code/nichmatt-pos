@@ -11,6 +11,7 @@
 // writable characteristic that service exposes (exact characteristic UUIDs
 // vary more than service UUIDs across OEM firmware builds).
 const SERVICE_CANDIDATES = [
+    'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // nRF51822-based generic printer module (confirmed present on the store's MPT-II printer)
     '000018f0-0000-1000-8000-00805f9b34fb', // generic ESC/POS BLE printer service
     '0000ff00-0000-1000-8000-00805f9b34fb', // GOOJPRT / Zjiang-style clones
     '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC / Microchip transparent UART
