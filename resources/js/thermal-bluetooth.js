@@ -6,12 +6,17 @@
 //
 // Cheap generic 58mm/80mm thermal printer modules (the kind sold under many
 // rebranded names, e.g. "PandaTM") overwhelmingly use one of a small set of
-// OEM Bluetooth LE modules. We try their known service/characteristic UUIDs
-// in order since Web Bluetooth requires declaring services up front.
+// OEM Bluetooth LE modules. We try their known service UUIDs in order since
+// Web Bluetooth requires declaring services up front, then look for whatever
+// writable characteristic that service exposes (exact characteristic UUIDs
+// vary more than service UUIDs across OEM firmware builds).
 const SERVICE_CANDIDATES = [
-    { service: '000018f0-0000-1000-8000-00805f9b34fb', characteristic: '00002af1-0000-1000-8000-00805f9b34fb' },
-    { service: '0000ff00-0000-1000-8000-00805f9b34fb', characteristic: '0000ff02-0000-1000-8000-00805f9b34fb' },
-    { service: '49535343-fe7d-4ae5-8fa9-9fafd205e455', characteristic: '49535343-8841-43f4-a8d4-ecbe34729bb3' },
+    '000018f0-0000-1000-8000-00805f9b34fb', // generic ESC/POS BLE printer service
+    '0000ff00-0000-1000-8000-00805f9b34fb', // GOOJPRT / Zjiang-style clones
+    '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC / Microchip transparent UART
+    '6e400001-b5a3-f393-e0a9-e50e24dcca9e', // Nordic UART Service (very common in cheap BLE modules)
+    '0000ae30-0000-1000-8000-00805f9b34fb', // "cat printer" style mini printer service
+    '0000fff0-0000-1000-8000-00805f9b34fb', // HM-10 / HC-08 clone service
 ];
 
 let cachedDevice = null;
@@ -22,24 +27,30 @@ function isSupported() {
 }
 
 async function findWritableCharacteristic(server) {
-    for (const candidate of SERVICE_CANDIDATES) {
+    for (const serviceUuid of SERVICE_CANDIDATES) {
         try {
-            const service = await server.getPrimaryService(candidate.service);
-            const characteristic = await service.getCharacteristic(candidate.characteristic);
+            const service = await server.getPrimaryService(serviceUuid);
+            const characteristics = await service.getCharacteristics();
+            const writable = characteristics.find((c) => c.properties.write || c.properties.writeWithoutResponse);
 
-            return characteristic;
+            if (writable) {
+                return writable;
+            }
         } catch (e) {
             // This device doesn't expose this candidate service, try the next one.
         }
     }
 
-    throw new Error('Printer ini menggunakan protokol Bluetooth yang belum dikenali aplikasi.');
+    throw new Error(
+        'Printer ini menggunakan protokol Bluetooth yang belum dikenali aplikasi. ' +
+        'Buka chrome://bluetooth-internals di tab baru, hubungkan ke printer, dan kirim daftar UUID service/characteristic yang muncul.'
+    );
 }
 
 async function connect() {
     const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
-        optionalServices: SERVICE_CANDIDATES.map((c) => c.service),
+        optionalServices: SERVICE_CANDIDATES,
     });
 
     const server = await device.gatt.connect();
