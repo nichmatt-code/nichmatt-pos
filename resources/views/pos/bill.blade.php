@@ -31,7 +31,7 @@
         .print-btn { margin-top: 12px; text-align: center; }
         .bt-btn { margin-top: 6px; text-align: center; }
         .bt-btn button { display: none; }
-        .bt-status { margin-top: 6px; text-align: center; font-size: 11px; }
+        .bt-status { margin-top: 6px; text-align: center; font-size: 11px; white-space: pre-wrap; }
         @media print {
             .print-btn, .bt-btn, .bt-status { display: none; }
         }

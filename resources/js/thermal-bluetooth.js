@@ -28,6 +28,8 @@ function isSupported() {
 }
 
 async function findWritableCharacteristic(server) {
+    const attempts = [];
+
     for (const serviceUuid of SERVICE_CANDIDATES) {
         try {
             const service = await server.getPrimaryService(serviceUuid);
@@ -37,14 +39,17 @@ async function findWritableCharacteristic(server) {
             if (writable) {
                 return writable;
             }
+
+            attempts.push(serviceUuid + ': service ditemukan, tapi tidak ada characteristic yang bisa ditulis (' + characteristics.length + ' characteristic)');
         } catch (e) {
-            // This device doesn't expose this candidate service, try the next one.
+            attempts.push(serviceUuid + ': ' + (e.name || 'Error') + ' - ' + e.message);
         }
     }
 
+    console.error('NichmattThermalPrinter: tidak ada service yang cocok.', attempts);
+
     throw new Error(
-        'Printer ini menggunakan protokol Bluetooth yang belum dikenali aplikasi. ' +
-        'Buka chrome://bluetooth-internals di tab baru, hubungkan ke printer, dan kirim daftar UUID service/characteristic yang muncul.'
+        'Printer ini menggunakan protokol Bluetooth yang belum dikenali aplikasi.\n' + attempts.join('\n')
     );
 }
 
@@ -55,6 +60,11 @@ async function connect() {
     });
 
     const server = await device.gatt.connect();
+
+    // Some Bluetooth stacks (notably Windows) need a moment after connecting
+    // before GATT services are actually queryable.
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
     const characteristic = await findWritableCharacteristic(server);
 
     cachedDevice = device;
