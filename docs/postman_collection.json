@@ -1,18 +1,11 @@
 {
 	"info": {
 		"name": "NichmattPOS API",
-		"description": "Mobile (React Native) cashier API for NichmattPOS. Auth is via Laravel Sanctum tokens: log in once, then send the returned token as a Bearer token on every other request.",
+		"description": "Mobile (React Native) cashier API for NichmattPOS. Import docs/postman_environment.json too, select it as the active environment (top-right dropdown), fill in `email`/`password`, then run Login once - it stores the token automatically. Every other request has its own explicit Bearer auth reading {{token}}.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
-	"auth": {
-		"type": "bearer",
-		"bearer": [
-			{ "key": "token", "value": "{{token}}", "type": "string" }
-		]
-	},
 	"variable": [
-		{ "key": "base_url", "value": "https://nichmattpos.store/api/v1" },
-		{ "key": "token", "value": "" }
+		{ "key": "base_url", "value": "https://nichmattpos.store/api/v1" }
 	],
 	"item": [
 		{
@@ -25,8 +18,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
+									"pm.test('login succeeded', function () { pm.response.to.have.status(200); });",
+									"",
 									"const body = pm.response.json();",
-									"if (body.token) { pm.collectionVariables.set('token', body.token); }"
+									"",
+									"if (body.token) {",
+									"    pm.environment.set('token', body.token);",
+									"    pm.collectionVariables.set('token', body.token);",
+									"    console.log('Token saved:', body.token);",
+									"} else {",
+									"    console.error('No token in response - check the email/password/device_name you sent.', body);",
+									"}"
 								]
 							}
 						}
@@ -37,15 +39,17 @@
 						"auth": { "type": "noauth" },
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"password\",\n  \"device_name\": \"Postman\"\n}"
+							"raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"device_name\": \"Postman\"\n}"
 						},
-						"url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+						"url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] },
+						"description": "Run this FIRST. Make sure the active environment (top-right dropdown) is set, and that `email`/`password` are filled in with a real account that has a password set (Profile page > Buat/Ubah Password if the account was created via Google)."
 					}
 				},
 				{
 					"name": "Me",
 					"request": {
 						"method": "GET",
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
 						"url": { "raw": "{{base_url}}/me", "host": ["{{base_url}}"], "path": ["me"] }
 					}
 				},
@@ -53,6 +57,7 @@
 					"name": "Logout",
 					"request": {
 						"method": "POST",
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
 						"url": { "raw": "{{base_url}}/logout", "host": ["{{base_url}}"], "path": ["logout"] }
 					}
 				}
@@ -65,6 +70,7 @@
 					"name": "List Products",
 					"request": {
 						"method": "GET",
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
 						"url": {
 							"raw": "{{base_url}}/products?search=&category_id=",
 							"host": ["{{base_url}}"],
@@ -80,6 +86,7 @@
 					"name": "List Categories",
 					"request": {
 						"method": "GET",
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
 						"url": { "raw": "{{base_url}}/categories", "host": ["{{base_url}}"], "path": ["categories"] }
 					}
 				},
@@ -87,6 +94,7 @@
 					"name": "Checkout (create transaction)",
 					"request": {
 						"method": "POST",
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
 						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
@@ -99,6 +107,7 @@
 					"name": "Get Transaction",
 					"request": {
 						"method": "GET",
+						"auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
 						"url": { "raw": "{{base_url}}/transactions/1", "host": ["{{base_url}}"], "path": ["transactions", "1"] }
 					}
 				}
