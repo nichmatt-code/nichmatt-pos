@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Tests\TestCase;
@@ -97,5 +98,40 @@ class GoogleAuthTest extends TestCase
 
         $this->assertAuthenticatedAs($second);
         $this->assertEqualsCanonicalizing([$first->id, $second->id], session('linked_accounts'));
+    }
+
+    public function test_mobile_redirect_gets_a_token_instead_of_a_session(): void
+    {
+        Socialite::fake('google', $this->fakeGoogleUser('g-mobile-1', 'Kasir Mobile', 'kasir.mobile@example.com'));
+
+        $this->get('/auth/google/redirect?mobile_redirect='.urlencode('exp://192.168.1.5:8081/--/'));
+
+        $response = $this->get('/auth/google/callback');
+
+        $user = User::where('email', 'kasir.mobile@example.com')->firstOrFail();
+
+        $response->assertRedirect();
+        $this->assertStringStartsWith('exp://192.168.1.5:8081/--/?token=', $response->headers->get('Location'));
+        $this->assertGuest();
+
+        $token = explode('token=', (string) $response->headers->get('Location'))[1];
+        $accessToken = PersonalAccessToken::findToken(urldecode($token));
+
+        $this->assertNotNull($accessToken);
+        $this->assertSame($user->id, $accessToken->tokenable_id);
+    }
+
+    public function test_mobile_redirect_is_ignored_when_the_scheme_is_not_allowlisted(): void
+    {
+        Socialite::fake('google', $this->fakeGoogleUser('g-mobile-2', 'Percobaan Jahat', 'percobaan@example.com'));
+
+        $this->get('/auth/google/redirect?mobile_redirect='.urlencode('https://evil.example.com/steal'));
+
+        $response = $this->get('/auth/google/callback');
+
+        $user = User::where('email', 'percobaan@example.com')->firstOrFail();
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('pos'));
     }
 }
