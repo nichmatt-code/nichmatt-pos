@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TransactionResource;
+use App\Models\Customer;
 use App\Models\SelfOrder;
 use App\Models\Transaction;
 use App\Services\CartPricer;
@@ -33,6 +34,7 @@ class TransactionController extends Controller
             // Cuma dipakai kalau toko mengizinkan (lihat CartPricer) - diabaikan
             // kalau tidak, jadi aman divalidasi longgar di sini.
             'items.*.price' => ['nullable', 'integer', 'min:0'],
+            'customer_id' => ['nullable', 'integer'],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'note' => ['nullable', 'string', 'max:255'],
             'discount' => ['nullable', 'integer', 'min:0'],
@@ -52,6 +54,7 @@ class TransactionController extends Controller
         );
 
         $claimedSelfOrderId = $this->resolveClaimedSelfOrderId($data['self_order_id'] ?? null);
+        $customer = $this->resolveCustomer($data['customer_id'] ?? null);
 
         $paidAmount = $data['payment_method'] === 'cash' ? (int) $data['paid_amount'] : $pricing['total'];
 
@@ -61,8 +64,8 @@ class TransactionController extends Controller
 
         $transaction = $checkoutService->materialize($pricing['cart'], [
             'user_id' => Auth::id(),
-            'customer_id' => null,
-            'customer_name' => $data['customer_name'] ?? '',
+            'customer_id' => $customer?->id,
+            'customer_name' => $customer?->name ?? $data['customer_name'] ?? '',
             'order_note' => $data['note'] ?? '',
             'subtotal' => $pricing['subtotal'],
             'discount' => $pricing['discount'],
@@ -105,5 +108,18 @@ class TransactionController extends Controller
         }
 
         return $selfOrder->id;
+    }
+
+    private function resolveCustomer(?int $customerId): ?Customer
+    {
+        if (! $customerId) {
+            return null;
+        }
+
+        // `Customer::find()` is already store-scoped via BelongsToStore, so
+        // a customer id from another store just resolves to null here -
+        // the transaction falls back to whatever plain-text customer_name
+        // was sent, same as if no id had been picked at all.
+        return Customer::query()->find($customerId);
     }
 }
