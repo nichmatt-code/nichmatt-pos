@@ -75,7 +75,10 @@ class ApiCashierTest extends TestCase
             ->assertJsonPath('data.subtotal', 10000)
             ->assertJsonPath('data.total', 10000)
             ->assertJsonPath('data.change_amount', 0)
-            ->assertJsonPath('data.items.0.product_name', 'Es Teh');
+            ->assertJsonPath('data.items.0.product_name', 'Es Teh')
+            ->assertJsonStructure(['data' => ['receipt_lines']]);
+
+        $this->assertNotEmpty($response->json('data.receipt_lines'));
 
         $this->assertSame(8, $product->fresh()->stock_qty);
     }

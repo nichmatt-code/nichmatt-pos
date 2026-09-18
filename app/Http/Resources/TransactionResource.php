@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\ThermalReceiptFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,6 +32,12 @@ class TransactionResource extends JsonResource
             'status' => $this->status,
             'created_at' => $this->created_at,
             'items' => TransactionItemResource::collection($this->whenLoaded('items')),
+            // Teks struk siap-cetak (format sama dengan yang dikirim ke
+            // printer thermal Bluetooth di versi web), supaya aplikasi
+            // mobile bisa mencetak lewat dialog print bawaan OS
+            // (AirPrint/Android print service) tanpa perlu tahu detail
+            // ESC/POS-nya sendiri.
+            'receipt_lines' => ThermalReceiptFormatter::forTransaction($this->resource),
         ];
     }
 }
