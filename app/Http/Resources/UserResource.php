@@ -24,6 +24,7 @@ class UserResource extends JsonResource
                 'id' => $this->store->id,
                 'name' => $this->store->name,
                 'has_access' => $this->store->hasAccess(),
+                'self_order_url' => $this->store->selfOrderUrl(),
             ],
         ];
     }

@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillPreviewController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\SelfOrderController;
 use App\Http\Controllers\Api\TransactionController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +21,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/categories', [CategoryController::class, 'index']);
             Route::post('/transactions', [TransactionController::class, 'store']);
             Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
+            Route::post('/self-orders/claim', [SelfOrderController::class, 'claim']);
+            Route::post('/coupons/check', [CouponController::class, 'check']);
+            Route::post('/bill-preview', [BillPreviewController::class, 'store']);
         });
     });
 });
