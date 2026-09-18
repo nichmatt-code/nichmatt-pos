@@ -18,14 +18,14 @@ use Illuminate\Validation\ValidationException;
 class CartPricer
 {
     /**
-     * @param  array<int, array{product_id: int, qty: int, note?: ?string}>  $items
+     * @param  array<int, array{product_id: int, qty: int, note?: ?string, price?: ?int}>  $items
      * @return array{cart: array<int, array{product_id: int, package_id: ?int, name: string, price: int, cost_price: int, qty: int, note: string, unlimited: bool, type: string}>, subtotal: int, discount: int, coupon: ?Coupon, coupon_discount_amount: int, discounted_subtotal: int, service_charge_amount: int, tax_amount: int, total: int}
      *
      * @throws ValidationException
      */
     public function price(Store $store, array $items, int $discount, ?string $couponCode): array
     {
-        $cart = $this->buildCart($items);
+        $cart = $this->buildCart($items, $store->allow_price_edit);
 
         $subtotal = collect($cart)->sum(fn (array $item) => $item['price'] * $item['qty']);
 
@@ -56,12 +56,12 @@ class CartPricer
     }
 
     /**
-     * @param  array<int, array{product_id: int, qty: int, note?: ?string}>  $items
+     * @param  array<int, array{product_id: int, qty: int, note?: ?string, price?: ?int}>  $items
      * @return array<int, array{product_id: int, package_id: ?int, name: string, price: int, cost_price: int, qty: int, note: string, unlimited: bool, type: string}>
      *
      * @throws ValidationException
      */
-    private function buildCart(array $items): array
+    private function buildCart(array $items, bool $allowPriceEdit): array
     {
         $products = Product::query()
             ->where('is_active', true)
@@ -88,11 +88,19 @@ class CartPricer
                 ]);
             }
 
+            // Harga custom cuma dipakai kalau tokonya benar-benar mengizinkan
+            // (pengaturan "allow_price_edit" yang diatur owner) - kalau
+            // tidak, harga kiriman client diabaikan sepenuhnya, dan yang
+            // dipakai selalu harga produk yang sebenarnya.
+            $price = $allowPriceEdit && isset($line['price']) && $line['price'] >= 0
+                ? (int) $line['price']
+                : $product->price;
+
             $cart[$product->id] = [
                 'product_id' => $product->id,
                 'package_id' => null,
                 'name' => $product->name,
-                'price' => $product->price,
+                'price' => $price,
                 'cost_price' => $product->cost_price,
                 'qty' => $line['qty'],
                 'note' => $line['note'] ?? '',

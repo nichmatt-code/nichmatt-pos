@@ -27,6 +27,7 @@ class BillPreviewController extends Controller
             'items.*.product_id' => ['required', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
             'items.*.note' => ['nullable', 'string', 'max:255'],
+            'items.*.price' => ['nullable', 'integer', 'min:0'],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'note' => ['nullable', 'string', 'max:255'],
             'discount' => ['nullable', 'integer', 'min:0'],

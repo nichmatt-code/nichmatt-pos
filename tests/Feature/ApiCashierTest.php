@@ -97,6 +97,25 @@ class ApiCashierTest extends TestCase
         $response->assertCreated()->assertJsonPath('data.subtotal', 5000);
     }
 
+    public function test_checkout_honors_a_custom_price_when_the_store_allows_price_editing(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10), 'allow_price_edit' => true]);
+        $user = User::factory()->create(['store_id' => $store->id, 'role' => 'kasir']);
+        $product = Product::create(['store_id' => $store->id, 'name' => 'Es Teh', 'price' => 5000, 'cost_price' => 2000, 'stock_qty' => 10, 'is_active' => true]);
+
+        $response = $this->authenticatedRequest($user)->postJson('/api/v1/transactions', [
+            'items' => [
+                ['product_id' => $product->id, 'qty' => 2, 'price' => 3000],
+            ],
+            'payment_method' => 'cash',
+            'paid_amount' => 6000,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.subtotal', 6000)
+            ->assertJsonPath('data.items.0.price', 3000);
+    }
+
     public function test_checkout_fails_when_stock_is_insufficient(): void
     {
         $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);

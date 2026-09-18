@@ -30,6 +30,9 @@ class TransactionController extends Controller
             'items.*.product_id' => ['required', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
             'items.*.note' => ['nullable', 'string', 'max:255'],
+            // Cuma dipakai kalau toko mengizinkan (lihat CartPricer) - diabaikan
+            // kalau tidak, jadi aman divalidasi longgar di sini.
+            'items.*.price' => ['nullable', 'integer', 'min:0'],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'note' => ['nullable', 'string', 'max:255'],
             'discount' => ['nullable', 'integer', 'min:0'],

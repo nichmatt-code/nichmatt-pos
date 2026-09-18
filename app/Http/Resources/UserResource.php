@@ -25,6 +25,7 @@ class UserResource extends JsonResource
                 'name' => $this->store->name,
                 'has_access' => $this->store->hasAccess(),
                 'self_order_url' => $this->store->selfOrderUrl(),
+                'allow_price_edit' => $this->store->allow_price_edit,
             ],
         ];
     }
