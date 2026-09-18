@@ -17,6 +17,10 @@ class EnsureStoreHasAccess
         $user = $request->user();
 
         if ($user && $user->store && ! $user->store->hasAccess()) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => 'Masa trial/langganan toko sudah berakhir.'], 402);
+            }
+
             return redirect()->route('billing.subscribe');
         }
 

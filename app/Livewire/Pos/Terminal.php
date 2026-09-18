@@ -16,7 +16,7 @@ use App\Models\StockMovement;
 use App\Models\Store;
 use App\Models\Tag;
 use App\Models\Transaction;
-use App\Models\TransactionItem;
+use App\Services\CheckoutService;
 use App\Services\Contracts\MidtransQrisGatewayContract;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -668,7 +668,7 @@ class Terminal extends Component
         return max(0, (int) ($this->paidAmount !== '' ? $this->paidAmount : 0) - $this->total);
     }
 
-    public function checkout(): void
+    public function checkout(CheckoutService $checkoutService): void
     {
         $this->validate([
             'paymentMethod' => ['required', 'in:cash,qris,kartu'],
@@ -713,7 +713,7 @@ class Terminal extends Component
             return;
         }
 
-        $transaction = $this->materializeTransaction($this->cart, [
+        $transaction = $checkoutService->materialize($this->cart, [
             'user_id' => Auth::id(),
             'customer_id' => $this->selectedCustomerId,
             'customer_name' => $this->customerName,
@@ -763,125 +763,6 @@ class Terminal extends Component
         }
 
         return [$coupon->id, $this->couponDiscountAmount];
-    }
-
-    /**
-     * Create the Transaction/TransactionItem rows and deduct product +
-     * ingredient stock for a cart - the one place this happens, shared by
-     * the normal (manual) checkout and by a settled online QRIS payment.
-     *
-     * @param  array<int, array{product_id: int, name: string, price: int, cost_price: int, qty: int, note: string, unlimited: bool}>  $cart
-     * @param  array{user_id: ?int, customer_id: ?int, customer_name: string, order_note: string, subtotal: int, discount: int, coupon_id: ?int, coupon_discount_amount: int, tax_amount: int, service_charge_amount: int, total: int, payment_method: string, paid_amount: int, change_amount: int, claimed_self_order_id: ?int}  $meta
-     */
-    private function materializeTransaction(array $cart, array $meta): Transaction
-    {
-        return DB::transaction(function () use ($cart, $meta) {
-            $transaction = Transaction::create([
-                'user_id' => $meta['user_id'],
-                'self_order_id' => $meta['claimed_self_order_id'],
-                'customer_id' => $meta['customer_id'],
-                'transaction_no' => 'TRX-'.now()->format('Ymd-His').'-'.random_int(100, 999),
-                'customer_name' => $meta['customer_name'] !== '' ? $meta['customer_name'] : null,
-                'note' => $meta['order_note'] !== '' ? $meta['order_note'] : null,
-                'subtotal' => $meta['subtotal'],
-                'discount' => $meta['discount'],
-                'coupon_id' => $meta['coupon_id'] ?? null,
-                'coupon_discount_amount' => $meta['coupon_discount_amount'] ?? 0,
-                'tax_amount' => $meta['tax_amount'],
-                'service_charge_amount' => $meta['service_charge_amount'],
-                'total' => $meta['total'],
-                'payment_method' => $meta['payment_method'],
-                'paid_amount' => $meta['paid_amount'],
-                'change_amount' => $meta['change_amount'],
-                'status' => 'completed',
-            ]);
-
-            foreach ($cart as $item) {
-                $isPackage = ($item['type'] ?? 'product') === 'package';
-
-                TransactionItem::create([
-                    'transaction_id' => $transaction->id,
-                    'product_id' => $isPackage ? null : $item['product_id'],
-                    'package_id' => $isPackage ? $item['package_id'] : null,
-                    'product_name' => $item['name'],
-                    'price' => $item['price'],
-                    'cost_price' => $item['cost_price'],
-                    'qty' => $item['qty'],
-                    'note' => $item['note'] !== '' ? $item['note'] : null,
-                    'subtotal' => $item['price'] * $item['qty'],
-                ]);
-
-                if ($isPackage) {
-                    $this->deductPackageStock($item['package_id'], $item['qty'], $meta['user_id'], $transaction->transaction_no);
-
-                    continue;
-                }
-
-                $this->deductProductStock($item['product_id'], $item['qty'], empty($item['unlimited']), $meta['user_id'], $transaction->transaction_no);
-            }
-
-            if ($meta['claimed_self_order_id']) {
-                SelfOrder::where('id', $meta['claimed_self_order_id'])->update(['status' => 'completed']);
-            }
-
-            return $transaction;
-        });
-    }
-
-    /**
-     * Deduct one product's own stock (unless unlimited) and its ingredient
-     * inventory - the effect of selling `$qty` of it, whether that came
-     * from a direct cart line or as a component inside a sold package.
-     */
-    private function deductProductStock(int $productId, int $qty, bool $deductOwnStock, ?int $userId, string $note): void
-    {
-        $product = Product::with('ingredients')->findOrFail($productId);
-
-        if ($deductOwnStock && ! $product->is_unlimited_stock) {
-            $product->decrement('stock_qty', $qty);
-
-            StockMovement::create([
-                'product_id' => $productId,
-                'user_id' => $userId,
-                'type' => 'out',
-                'qty' => -$qty,
-                'note' => 'Penjualan '.$note,
-            ]);
-        }
-
-        foreach ($product->ingredients as $ingredient) {
-            $qtyUsed = $ingredient->pivot->qty_used * $qty;
-
-            $ingredient->decrement('stock_qty', $qtyUsed);
-
-            InventoryMovement::create([
-                'inventory_item_id' => $ingredient->id,
-                'user_id' => $userId,
-                'type' => 'out',
-                'qty' => -$qtyUsed,
-                'note' => 'Penjualan '.$note,
-            ]);
-        }
-    }
-
-    /**
-     * Selling `$packageQty` of a package deducts every one of its component
-     * products (and their own ingredients) by qty-per-package * packages
-     * sold - the package itself has no stock of its own.
-     */
-    private function deductPackageStock(int $packageId, int $packageQty, ?int $userId, string $note): void
-    {
-        $package = Package::with('items')->findOrFail($packageId);
-
-        foreach ($package->items as $packageItem) {
-            $this->deductProductStock(
-                $packageItem->product_id,
-                $packageItem->qty * $packageQty,
-                true,
-                $userId,
-                'Paket '.$package->name.' - '.$note,
-            );
-        }
     }
 
     /**
@@ -972,7 +853,7 @@ class Terminal extends Component
      * their Midtrans Notification URL at this app must not leave the
      * cashier stuck waiting forever.
      */
-    public function checkQrisPaymentStatus(MidtransQrisGatewayContract $gateway): void
+    public function checkQrisPaymentStatus(MidtransQrisGatewayContract $gateway, CheckoutService $checkoutService): void
     {
         if (! $this->qrisPaymentId) {
             return;
@@ -1006,7 +887,7 @@ class Terminal extends Component
         $fraudStatus = $status->fraud_status ?? null;
 
         if (in_array($transactionStatus, ['capture', 'settlement'], true) && $fraudStatus !== 'deny') {
-            $this->completeQrisPayment($qrisPayment);
+            $this->completeQrisPayment($qrisPayment, $checkoutService);
         } elseif ($transactionStatus === 'expire') {
             $qrisPayment->update(['status' => 'expired']);
         } elseif (in_array($transactionStatus, ['cancel', 'deny'], true)) {
@@ -1019,7 +900,7 @@ class Terminal extends Component
      * transaction_id (not status) so a duplicate settlement check - e.g. two
      * overlapping polls - can never create the sale twice.
      */
-    private function completeQrisPayment(QrisPayment $qrisPayment): void
+    private function completeQrisPayment(QrisPayment $qrisPayment, CheckoutService $checkoutService): void
     {
         if ($qrisPayment->transaction_id) {
             return;
@@ -1027,7 +908,7 @@ class Terminal extends Component
 
         $snapshot = $qrisPayment->cart_snapshot;
 
-        $transaction = $this->materializeTransaction($snapshot['cart'], [
+        $transaction = $checkoutService->materialize($snapshot['cart'], [
             'user_id' => $qrisPayment->user_id,
             'customer_id' => $snapshot['customer_id'],
             'customer_name' => $snapshot['customer_name'],

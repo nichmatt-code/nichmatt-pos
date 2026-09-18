@@ -1,0 +1,108 @@
+{
+	"info": {
+		"name": "NichmattPOS API",
+		"description": "Mobile (React Native) cashier API for NichmattPOS. Auth is via Laravel Sanctum tokens: log in once, then send the returned token as a Bearer token on every other request.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{ "key": "token", "value": "{{token}}", "type": "string" }
+		]
+	},
+	"variable": [
+		{ "key": "base_url", "value": "https://nichmattpos.store/api/v1" },
+		{ "key": "token", "value": "" }
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const body = pm.response.json();",
+									"if (body.token) { pm.collectionVariables.set('token', body.token); }"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"auth": { "type": "noauth" },
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"password\",\n  \"device_name\": \"Postman\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+					}
+				},
+				{
+					"name": "Me",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/me", "host": ["{{base_url}}"], "path": ["me"] }
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"url": { "raw": "{{base_url}}/logout", "host": ["{{base_url}}"], "path": ["logout"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Cashier",
+			"item": [
+				{
+					"name": "List Products",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/products?search=&category_id=",
+							"host": ["{{base_url}}"],
+							"path": ["products"],
+							"query": [
+								{ "key": "search", "value": "" },
+								{ "key": "category_id", "value": "" }
+							]
+						}
+					}
+				},
+				{
+					"name": "List Categories",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/categories", "host": ["{{base_url}}"], "path": ["categories"] }
+					}
+				},
+				{
+					"name": "Checkout (create transaction)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    { \"product_id\": 1, \"qty\": 2, \"note\": \"\" }\n  ],\n  \"customer_name\": \"\",\n  \"note\": \"\",\n  \"discount\": 0,\n  \"payment_method\": \"cash\",\n  \"paid_amount\": 20000\n}"
+						},
+						"url": { "raw": "{{base_url}}/transactions", "host": ["{{base_url}}"], "path": ["transactions"] }
+					}
+				},
+				{
+					"name": "Get Transaction",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/transactions/1", "host": ["{{base_url}}"], "path": ["transactions", "1"] }
+					}
+				}
+			]
+		}
+	]
+}
