@@ -15,7 +15,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Session;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'store_id', 'role', 'permissions', 'is_active', 'is_developer', 'google_id'])]
+#[Fillable(['name', 'email', 'password', 'password_set_by_user', 'store_id', 'role', 'permissions', 'is_active', 'is_developer', 'google_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -41,6 +41,7 @@ class User extends Authenticatable
             'permissions' => 'array',
             'is_active' => 'boolean',
             'is_developer' => 'boolean',
+            'password_set_by_user' => 'boolean',
         ];
     }
 

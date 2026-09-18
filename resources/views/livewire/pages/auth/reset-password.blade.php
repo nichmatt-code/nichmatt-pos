@@ -47,6 +47,7 @@ new #[Layout('layouts.guest')] class extends Component
             function ($user) {
                 $user->forceFill([
                     'password' => Hash::make($this->password),
+                    'password_set_by_user' => true,
                     'remember_token' => Str::random(60),
                 ])->save();
 

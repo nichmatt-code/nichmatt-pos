@@ -47,4 +47,32 @@ class PasswordUpdateTest extends TestCase
             ->assertHasErrors(['current_password'])
             ->assertNoRedirect();
     }
+
+    public function test_a_google_only_account_can_set_a_password_without_a_current_one(): void
+    {
+        $user = User::factory()->create(['password_set_by_user' => false]);
+
+        $this->actingAs($user);
+
+        $component = Volt::test('profile.update-password-form')
+            ->assertSet('needsCurrentPassword', false)
+            ->set('password', 'new-password')
+            ->set('password_confirmation', 'new-password')
+            ->call('updatePassword');
+
+        $component->assertHasNoErrors()->assertNoRedirect();
+
+        $fresh = $user->refresh();
+        $this->assertTrue(Hash::check('new-password', $fresh->password));
+        $this->assertTrue($fresh->password_set_by_user);
+    }
+
+    public function test_once_a_password_is_set_the_form_requires_the_current_password_again(): void
+    {
+        $user = User::factory()->create(['password_set_by_user' => true]);
+
+        $this->actingAs($user);
+
+        Volt::test('profile.update-password-form')->assertSet('needsCurrentPassword', true);
+    }
 }

@@ -35,6 +35,7 @@ class GoogleAuthTest extends TestCase
         $this->assertSame('owner', $user->role);
         $this->assertNotNull($user->email_verified_at);
         $this->assertTrue($user->store->onTrial());
+        $this->assertFalse($user->password_set_by_user);
 
         $this->assertAuthenticatedAs($user);
         $response->assertRedirect(route('pos'));
