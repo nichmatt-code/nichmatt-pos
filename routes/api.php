@@ -23,7 +23,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('store.access')->group(function () {
             Route::get('/products', [ProductController::class, 'index']);
             Route::get('/categories', [CategoryController::class, 'index']);
-            Route::get('/customers', [CustomerController::class, 'index']);
+            Route::get('/customers/search', [CustomerController::class, 'search']);
             Route::get('/transactions', [TransactionHistoryController::class, 'index']);
             Route::post('/transactions', [TransactionController::class, 'store']);
             Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
@@ -43,6 +43,18 @@ Route::prefix('v1')->group(function () {
                 Route::put('/stock-opnames/{stockOpname}/counts', [StockOpnameController::class, 'updateCounts']);
                 Route::post('/stock-opnames/{stockOpname}/finish', [StockOpnameController::class, 'finish']);
                 Route::delete('/stock-opnames/{stockOpname}', [StockOpnameController::class, 'destroy']);
+            });
+
+            // Sama seperti halaman Pelanggan di web: butuh permission
+            // 'customers' - beda dari /customers/search di atas, yang
+            // sengaja dibiarkan terbuka untuk semua kasir karena dipakai
+            // saat checkout.
+            Route::middleware('permission:customers')->group(function () {
+                Route::get('/customers', [CustomerController::class, 'index']);
+                Route::post('/customers', [CustomerController::class, 'store']);
+                Route::get('/customers/{customer}', [CustomerController::class, 'show']);
+                Route::put('/customers/{customer}', [CustomerController::class, 'update']);
+                Route::delete('/customers/{customer}', [CustomerController::class, 'destroy']);
             });
         });
     });
