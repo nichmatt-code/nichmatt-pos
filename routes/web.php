@@ -92,6 +92,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('stores.show');
         Route::view('team', 'developer.team')->name('team');
         Route::view('pricing', 'developer.pricing')->name('pricing');
+        Route::view('support', 'developer.support')->name('support');
     });
 });
 

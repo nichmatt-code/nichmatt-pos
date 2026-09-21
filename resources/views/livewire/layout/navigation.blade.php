@@ -276,6 +276,9 @@ new class extends Component
                                 <x-dropdown-link :href="route('developer.pricing')" wire:navigate>
                                     {{ __('Harga & Promo') }}
                                 </x-dropdown-link>
+                                <x-dropdown-link :href="route('developer.support')" wire:navigate>
+                                    {{ __('Chat Bantuan') }}
+                                </x-dropdown-link>
                                 <x-dropdown-link :href="route('developer.team')" wire:navigate>
                                     {{ __('Akses Developer') }}
                                 </x-dropdown-link>
@@ -384,6 +387,9 @@ new class extends Component
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('developer.pricing')" :active="request()->routeIs('developer.pricing')" wire:navigate>
                         {{ __('Harga & Promo') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('developer.support')" :active="request()->routeIs('developer.support')" wire:navigate>
+                        {{ __('Chat Bantuan') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('developer.team')" :active="request()->routeIs('developer.team')" wire:navigate>
                         {{ __('Akses Developer') }}

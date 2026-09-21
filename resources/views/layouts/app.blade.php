@@ -54,5 +54,9 @@
                 {{ $slot }}
             </main>
         </div>
+
+        @auth
+            <livewire:support.chat-widget />
+        @endauth
     </body>
 </html>
