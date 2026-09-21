@@ -4,6 +4,7 @@ namespace App\Livewire\Developer;
 
 use App\Models\SupportConversation;
 use App\Models\SupportMessage;
+use App\Services\SupportAssistant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -123,6 +124,7 @@ class SupportInbox extends Component
         return view('livewire.developer.support-inbox', [
             'conversations' => $conversations,
             'selected' => $selected,
+            'aiConfigured' => app(SupportAssistant::class)->isConfigured(),
             'unreadTotal' => SupportConversation::where('unread_by_developer', true)->count(),
         ]);
     }

@@ -16,7 +16,11 @@
 
             <div id="support-chat-scroll" class="h-80 space-y-3 overflow-y-auto bg-slate-50 p-4 dark:bg-slate-950">
                 <div class="max-w-[85%] rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-sm text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200">
-                    {{ __('Halo! Ada yang bisa dibantu? Tanyakan apa saja soal aplikasi, misalnya "cara tambah produk" atau "cara stock opname".') }}
+                    @auth
+                        {{ __('Halo! Ada yang bisa dibantu? Tanyakan apa saja soal aplikasi, misalnya "cara tambah produk" atau "cara stock opname".') }}
+                    @else
+                        {{ __('Halo! Mau tahu fitur, harga, atau cara mencoba NichmattPOS? Tanyakan saja di sini.') }}
+                    @endauth
                 </div>
 
                 @foreach ($messages as $chat)
@@ -50,6 +54,14 @@
                 @error('message')
                     <p class="mb-2 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>
                 @enderror
+                @error('guestName')
+                    <p class="mb-2 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</p>
+                @enderror
+                @if ($askForName)
+                    <input type="text" wire:model="guestName" maxlength="60" autocomplete="name"
+                        placeholder="{{ __('Nama Anda (opsional)') }}"
+                        class="mb-2 w-full rounded-lg border-slate-200 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100" />
+                @endif
                 <div class="flex gap-2">
                     <input type="text" wire:model="message" maxlength="1000" autocomplete="off"
                         placeholder="{{ __('Tulis pertanyaan...') }}"

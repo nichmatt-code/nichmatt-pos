@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Developer\SupportInbox;
 use App\Livewire\Support\ChatWidget;
 use App\Models\Store;
+use App\Models\SubscriptionPlan;
 use App\Models\SupportConversation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -160,7 +161,7 @@ class SupportChatTest extends TestCase
     {
         $this->fakeAi();
         $user = $this->storeUser();
-        RateLimiter::clear('support-chat:'.$user->id);
+        RateLimiter::clear('support-chat:user:'.$user->id);
 
         $component = Livewire::actingAs($user)->test(ChatWidget::class);
 
@@ -304,5 +305,133 @@ class SupportChatTest extends TestCase
 
         $component->call('sendReply')->assertForbidden();
         $this->assertSame(0, $conversation->messages()->count());
+    }
+
+    public function test_the_landing_page_shows_the_help_sticker_to_visitors(): void
+    {
+        $this->get('/')->assertOk()->assertSeeLivewire(ChatWidget::class);
+    }
+
+    public function test_a_logged_out_visitor_can_chat_and_the_ai_knows_it_is_a_prospect(): void
+    {
+        $this->fakeAi('Ada trial gratis 30 hari.');
+        SubscriptionPlan::query()->delete();
+        SubscriptionPlan::create([
+            'code' => 'monthly', 'name' => 'Paket Bulanan', 'price' => 150000, 'promo_price' => null, 'duration_days' => 30, 'is_active' => true,
+        ]);
+
+        Livewire::test(ChatWidget::class)
+            ->call('toggle')
+            ->set('guestName', 'Budi Calon Pelanggan')
+            ->set('message', 'Berapa harganya?')
+            ->call('send')
+            ->assertHasNoErrors()
+            ->assertSee('Ada trial gratis 30 hari.');
+
+        $conversation = SupportConversation::firstOrFail();
+        $this->assertNull($conversation->user_id);
+        $this->assertNull($conversation->store_id);
+        $this->assertNotNull($conversation->guest_token);
+        $this->assertSame('Budi Calon Pelanggan', $conversation->displayName());
+        $this->assertTrue($conversation->isGuest());
+
+        Http::assertSent(fn (Request $request) => str_contains($request->data()['system'], 'belum login')
+            && str_contains($request->data()['system'], 'Paket Bulanan: Rp 150.000 per 30 hari'));
+    }
+
+    public function test_a_visitor_without_a_name_is_shown_as_pengunjung(): void
+    {
+        $this->fakeAi();
+
+        Livewire::test(ChatWidget::class)->set('message', 'Halo')->call('send');
+
+        $this->assertSame('Pengunjung', SupportConversation::firstOrFail()->displayName());
+    }
+
+    public function test_one_visitor_never_sees_another_visitors_conversation(): void
+    {
+        $this->fakeAi();
+
+        Livewire::test(ChatWidget::class)->set('message', 'Rahasia pengunjung satu')->call('send');
+
+        $this->flushSession();
+
+        Livewire::test(ChatWidget::class)
+            ->call('toggle')
+            ->assertDontSee('Rahasia pengunjung satu');
+    }
+
+    public function test_visitor_messages_are_rate_limited_per_session_and_per_ip(): void
+    {
+        $this->fakeAi();
+
+        $component = Livewire::test(ChatWidget::class);
+        foreach (range(1, 8) as $i) {
+            $component->set('message', "pesan {$i}")->call('send')->assertHasNoErrors();
+        }
+        $component->set('message', 'pesan ke-9')->call('send')->assertHasErrors('message');
+
+        $this->flushSession();
+        foreach (range(1, 30) as $ignored) {
+            RateLimiter::hit('support-chat:ip:127.0.0.1', 3600);
+        }
+
+        Livewire::test(ChatWidget::class)
+            ->set('message', 'dari IP yang sama')
+            ->call('send')
+            ->assertHasErrors('message');
+    }
+
+    public function test_a_developer_can_reply_to_a_visitor_and_the_visitor_sees_it(): void
+    {
+        $this->fakeAi();
+        $developer = $this->storeUser(['is_developer' => true]);
+
+        $visitor = Livewire::test(ChatWidget::class)->set('message', 'Bisa demo?')->call('send');
+        $conversation = SupportConversation::firstOrFail();
+        $guestToken = $conversation->guest_token;
+
+        Livewire::actingAs($developer)
+            ->test(SupportInbox::class)
+            ->assertSee('Pengunjung')
+            ->call('select', $conversation->id)
+            ->assertSee('Pengunjung landing page')
+            ->set('reply', 'Bisa, hubungi kami ya')
+            ->call('sendReply')
+            ->assertHasNoErrors();
+
+        $this->app->make('auth')->forgetGuards();
+        session(['support_guest_token' => $guestToken]);
+
+        $visitor->call('toggle')->assertSee('Bisa, hubungi kami ya');
+    }
+
+    public function test_without_ai_a_matching_guide_section_is_sent_instead_of_a_bare_notice(): void
+    {
+        config(['services.anthropic.key' => null]);
+        Http::fake();
+        $user = $this->storeUser();
+
+        Livewire::actingAs($user)
+            ->test(ChatWidget::class)
+            ->call('toggle')
+            ->set('message', 'Bagaimana cara stock opname?')
+            ->call('send')
+            ->assertSee('Berikut panduan yang mungkin membantu')
+            ->assertSee('tim developer akan membalas');
+
+        Http::assertNothingSent();
+    }
+
+    public function test_the_inbox_warns_developers_when_the_ai_key_is_missing(): void
+    {
+        config(['services.anthropic.key' => null]);
+        $developer = $this->storeUser(['is_developer' => true]);
+
+        Livewire::actingAs($developer)->test(SupportInbox::class)->assertSee('AI belum aktif');
+
+        config(['services.anthropic.key' => 'test-key']);
+
+        Livewire::actingAs($developer)->test(SupportInbox::class)->assertDontSee('AI belum aktif');
     }
 }

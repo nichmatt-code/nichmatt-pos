@@ -327,5 +327,7 @@
                 <p class="text-xs text-slate-400">&copy; {{ now()->year }} {{ config('app.name') }}. {{ __('Semua hak dilindungi.') }}</p>
             </div>
         </footer>
+
+        <livewire:support.chat-widget />
     </body>
 </html>

@@ -1,4 +1,10 @@
-<div wire:poll.10s class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+<div wire:poll.10s>
+@unless ($aiConfigured)
+    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
+        {{ __('AI belum aktif: ANTHROPIC_API_KEY belum diisi di server. Sampai diisi, pengguna hanya mendapat potongan panduan otomatis atau pesan "diteruskan ke developer" - balas manual dari sini.') }}
+    </div>
+@endunless
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
     <!-- Conversation list -->
     <div class="lg:col-span-1">
         <div class="mb-3 flex items-center justify-between">
@@ -20,12 +26,12 @@
                 <button type="button" wire:key="conv-{{ $conversation->id }}" wire:click="select({{ $conversation->id }})"
                     class="w-full rounded-xl border p-3 text-left transition {{ $selectedId === $conversation->id ? 'border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-500/10' : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800/60' }}">
                     <div class="flex items-center justify-between gap-2">
-                        <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $conversation->user->name }}</p>
+                        <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $conversation->displayName() }}</p>
                         @if ($conversation->unread_by_developer)
                             <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-rose-500"></span>
                         @endif
                     </div>
-                    <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $conversation->store?->name ?? '-' }}</p>
+                    <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $conversation->isGuest() ? __('Pengunjung landing page') : ($conversation->store?->name ?? '-') }}</p>
                     <div class="mt-1 flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500">
                         <span>{{ $conversation->messages_count }} {{ __('pesan') }}</span>
                         <span>&middot;</span>
@@ -47,8 +53,14 @@
             <div class="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
                     <div>
-                        <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $selected->user->name }} <span class="font-normal text-slate-400">&lt;{{ $selected->user->email }}&gt;</span></p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ $selected->store?->name ?? '-' }} &middot; {{ $selected->user->role }}</p>
+                        <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $selected->displayName() }} @if ($selected->user)<span class="font-normal text-slate-400">&lt;{{ $selected->user->email }}&gt;</span>@endif</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            @if ($selected->isGuest())
+                                {{ __('Pengunjung landing page (belum punya akun / belum login)') }}
+                            @else
+                                {{ $selected->store?->name ?? '-' }} &middot; {{ $selected->user->role }}
+                            @endif
+                        </p>
                     </div>
                     <div class="flex items-center gap-2">
                         @if ($selected->developer_handling)
@@ -80,7 +92,7 @@
                             <div class="max-w-[80%]">
                                 <p class="mb-0.5 text-[11px] font-medium text-slate-400 dark:text-slate-500 {{ $fromUser ? '' : 'text-right' }}">
                                     {{ match ($chat->sender_type) {
-                                        'user' => $selected->user->name,
+                                        'user' => $selected->displayName(),
                                         'developer' => __('Developer').($chat->sender ? ' ('.$chat->sender->name.')' : ''),
                                         'ai' => __('Asisten AI'),
                                         default => __('Sistem'),
@@ -110,4 +122,5 @@
             </div>
         @endif
     </div>
+</div>
 </div>
