@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Store;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -179,5 +181,47 @@ class DeveloperAccessTest extends TestCase
         ]);
 
         $this->assertTrue($user->isDeveloper());
+    }
+
+    public function test_developer_can_browse_a_store_products_categories_and_transactions(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $developer = User::factory()->create([
+            'store_id' => $store->id,
+            'role' => 'owner',
+            'is_developer' => true,
+        ]);
+
+        $otherStore = Store::factory()->create(['trial_ends_at' => now()->addDays(3)]);
+        $category = Category::create(['store_id' => $otherStore->id, 'name' => 'Minuman']);
+        Product::create([
+            'store_id' => $otherStore->id, 'category_id' => $category->id, 'name' => 'Es Teh Manis', 'price' => 5000,
+        ]);
+        $cashier = User::factory()->create(['store_id' => $otherStore->id, 'role' => 'kasir']);
+        Transaction::create([
+            'store_id' => $otherStore->id,
+            'user_id' => $cashier->id,
+            'customer_name' => 'Budi',
+            'transaction_no' => 'TRX-DEV-TEST',
+            'subtotal' => 5000,
+            'total' => 5000,
+            'payment_method' => 'cash',
+            'paid_amount' => 5000,
+        ]);
+
+        $component = Livewire::actingAs($developer)->test('developer.store-show', ['store' => $otherStore]);
+
+        $component->set('tab', 'products')->assertSee('Es Teh Manis')->assertSee('Minuman');
+        $component->set('tab', 'categories')->assertSee('Minuman')->assertSee('1');
+        $component->set('tab', 'transactions')->assertSee('TRX-DEV-TEST')->assertSee('Budi');
+    }
+
+    public function test_a_non_developer_cannot_browse_another_stores_data_through_store_show(): void
+    {
+        $store = Store::factory()->create(['trial_ends_at' => now()->addDays(10)]);
+        $owner = User::factory()->create(['store_id' => $store->id, 'role' => 'owner']);
+        $otherStore = Store::factory()->create(['trial_ends_at' => now()->addDays(3)]);
+
+        Livewire::actingAs($owner)->test('developer.store-show', ['store' => $otherStore])->assertForbidden();
     }
 }

@@ -9,19 +9,49 @@ use App\Models\StoreSubscriptionPayment;
 use App\Models\Transaction;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class StoreShow extends Component
 {
+    use WithPagination;
+
     public Store $store;
 
     public string $extendDays = '';
 
     public string $customExpiryDate = '';
 
+    /** overview | products | categories | transactions */
+    public string $tab = 'overview';
+
+    public string $productSearch = '';
+
+    public string $categorySearch = '';
+
+    public string $transactionSearch = '';
+
     public function mount(Store $store): void
     {
+        abort_unless(Auth::user()?->isDeveloper(), 403);
+
         $this->store = $store;
+    }
+
+    public function updatingProductSearch(): void
+    {
+        $this->resetPage('productsPage');
+    }
+
+    public function updatingCategorySearch(): void
+    {
+        $this->resetPage('categoriesPage');
+    }
+
+    public function updatingTransactionSearch(): void
+    {
+        $this->resetPage('transactionsPage');
     }
 
     /**
@@ -88,6 +118,46 @@ class StoreShow extends Component
                 ->latest()
                 ->limit(10)
                 ->get(),
+            'products' => $this->tab === 'products' ? $this->productsQuery()->paginate(15, ['*'], 'productsPage') : null,
+            'categories' => $this->tab === 'categories' ? $this->categoriesQuery()->paginate(15, ['*'], 'categoriesPage') : null,
+            'allTransactions' => $this->tab === 'transactions' ? $this->transactionsQuery()->paginate(15, ['*'], 'transactionsPage') : null,
         ]);
+    }
+
+    private function productsQuery()
+    {
+        return Product::withoutGlobalScopes()
+            ->where('store_id', $this->store->id)
+            // Eager-loaded relations run their own fresh query and are NOT
+            // covered by withoutGlobalScopes() above - Category's own
+            // BelongsToStore scope would otherwise filter it to the
+            // DEVELOPER's store and hide every other tenant's category.
+            ->with(['category' => fn ($query) => $query->withoutGlobalScopes()])
+            ->when($this->productSearch !== '', fn ($query) => $query->where(
+                fn ($q) => $q->where('name', 'like', "%{$this->productSearch}%")
+                    ->orWhere('sku', 'like', "%{$this->productSearch}%")
+                    ->orWhere('barcode', 'like', "%{$this->productSearch}%")
+            ))
+            ->orderBy('name');
+    }
+
+    private function categoriesQuery()
+    {
+        return Category::withoutGlobalScopes()
+            ->where('store_id', $this->store->id)
+            ->withCount('products')
+            ->when($this->categorySearch !== '', fn ($query) => $query->where('name', 'like', "%{$this->categorySearch}%"))
+            ->orderBy('name');
+    }
+
+    private function transactionsQuery()
+    {
+        return Transaction::withoutGlobalScopes()
+            ->where('store_id', $this->store->id)
+            ->when($this->transactionSearch !== '', fn ($query) => $query->where(
+                fn ($q) => $q->where('transaction_no', 'like', "%{$this->transactionSearch}%")
+                    ->orWhere('customer_name', 'like', "%{$this->transactionSearch}%")
+            ))
+            ->latest();
     }
 }

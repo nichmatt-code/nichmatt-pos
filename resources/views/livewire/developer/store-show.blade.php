@@ -93,96 +93,217 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Users -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-                <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('Karyawan') }}</h3>
+    <!-- Tabs -->
+    <div class="flex gap-1.5">
+        @foreach (['overview' => 'Ringkasan', 'products' => 'Produk', 'categories' => 'Kategori', 'transactions' => 'Transaksi'] as $value => $label)
+            <button type="button" wire:click="$set('tab', '{{ $value }}')"
+                class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {{ $tab === $value ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400' }}">
+                {{ __($label) }}
+            </button>
+        @endforeach
+    </div>
+
+    @if ($tab === 'overview')
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Users -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('Karyawan') }}</h3>
+                </div>
+                <table class="min-w-full text-sm">
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        @foreach ($users as $user)
+                            <tr>
+                                <td class="px-6 py-3">
+                                    <div class="text-slate-900 dark:text-slate-100 font-medium">{{ $user->name }}</div>
+                                    <div class="text-xs text-slate-400 dark:text-slate-500">{{ $user->email }}</div>
+                                </td>
+                                <td class="px-6 py-3">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $user->isOwner() ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' }}">
+                                        {{ $user->isOwner() ? 'Owner' : 'Karyawan' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-3 text-right">
+                                    @if ($user->is_active)
+                                        <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{{ __('Aktif') }}</span>
+                                    @else
+                                        <span class="text-xs text-rose-600 dark:text-rose-400 font-medium">{{ __('Nonaktif') }}</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-            <table class="min-w-full text-sm">
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    @foreach ($users as $user)
-                        <tr>
-                            <td class="px-6 py-3">
-                                <div class="text-slate-900 dark:text-slate-100 font-medium">{{ $user->name }}</div>
-                                <div class="text-xs text-slate-400 dark:text-slate-500">{{ $user->email }}</div>
-                            </td>
-                            <td class="px-6 py-3">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $user->isOwner() ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' }}">
-                                    {{ $user->isOwner() ? 'Owner' : 'Karyawan' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-3 text-right">
-                                @if ($user->is_active)
-                                    <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{{ __('Aktif') }}</span>
-                                @else
-                                    <span class="text-xs text-rose-600 dark:text-rose-400 font-medium">{{ __('Nonaktif') }}</span>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+
+            <!-- Subscription payments -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('Riwayat Pembayaran Langganan') }}</h3>
+                </div>
+                <table class="min-w-full text-sm">
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        @forelse ($payments as $payment)
+                            <tr>
+                                <td class="px-6 py-3">
+                                    <div class="text-slate-900 dark:text-slate-100 font-medium">{{ $payment->order_id }}</div>
+                                    <div class="text-xs text-slate-400 dark:text-slate-500">{{ $payment->created_at->format('d/m/Y H:i') }}</div>
+                                </td>
+                                <td class="px-6 py-3 text-slate-500 dark:text-slate-400">Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
+                                <td class="px-6 py-3 text-right">
+                                    <span class="text-xs font-medium {{ $payment->status === 'settlement' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' }}">
+                                        {{ ucfirst($payment->status) }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="px-6 py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada pembayaran.') }}</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Subscription payments -->
+        <!-- Recent transactions -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-                <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('Riwayat Pembayaran Langganan') }}</h3>
+                <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('Transaksi Terbaru') }}</h3>
             </div>
             <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                        <th class="px-6 py-2">{{ __('No. Transaksi') }}</th>
+                        <th class="px-6 py-2">{{ __('Waktu') }}</th>
+                        <th class="px-6 py-2">{{ __('Status') }}</th>
+                        <th class="px-6 py-2">{{ __('Total') }}</th>
+                    </tr>
+                </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    @forelse ($payments as $payment)
+                    @forelse ($recentTransactions as $transaction)
                         <tr>
-                            <td class="px-6 py-3">
-                                <div class="text-slate-900 dark:text-slate-100 font-medium">{{ $payment->order_id }}</div>
-                                <div class="text-xs text-slate-400 dark:text-slate-500">{{ $payment->created_at->format('d/m/Y H:i') }}</div>
-                            </td>
-                            <td class="px-6 py-3 text-slate-500 dark:text-slate-400">Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
-                            <td class="px-6 py-3 text-right">
-                                <span class="text-xs font-medium {{ $payment->status === 'settlement' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500' }}">
-                                    {{ ucfirst($payment->status) }}
-                                </span>
-                            </td>
+                            <td class="px-6 py-2.5 text-slate-900 dark:text-slate-100">{{ $transaction->transaction_no }}</td>
+                            <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ $transaction->created_at->format('d/m/Y H:i') }}</td>
+                            <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ ucfirst($transaction->status) }}</td>
+                            <td class="px-6 py-2.5 text-slate-900 dark:text-slate-100">Rp {{ number_format($transaction->total, 0, ',', '.') }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="px-6 py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada pembayaran.') }}</td>
+                            <td colspan="4" class="px-6 py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada transaksi.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
-
-    <!-- Recent transactions -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ __('Transaksi Terbaru') }}</h3>
+    @elseif ($tab === 'products')
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                <input wire:model.live.debounce.300ms="productSearch" type="text" placeholder="{{ __('Cari nama/SKU/barcode...') }}"
+                    class="w-full max-w-xs rounded-lg border-slate-200 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100" />
+            </div>
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                        <th class="px-6 py-2">{{ __('Produk') }}</th>
+                        <th class="px-6 py-2">{{ __('Kategori') }}</th>
+                        <th class="px-6 py-2">{{ __('Harga Jual') }}</th>
+                        <th class="px-6 py-2">{{ __('Stok') }}</th>
+                        <th class="px-6 py-2">{{ __('Status') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    @forelse ($products as $product)
+                        <tr>
+                            <td class="px-6 py-2.5 text-slate-900 dark:text-slate-100">
+                                {{ $product->name }}
+                                @if ($product->sku)
+                                    <span class="block text-xs text-slate-400 dark:text-slate-500">{{ $product->sku }}</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ $product->category?->name ?? __('Tanpa kategori') }}</td>
+                            <td class="px-6 py-2.5 text-slate-900 dark:text-slate-100">Rp {{ number_format($product->price, 0, ',', '.') }}</td>
+                            <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ $product->is_unlimited_stock ? __('Tanpa batas') : $product->stock_qty }}</td>
+                            <td class="px-6 py-2.5">
+                                @if ($product->is_out_of_stock)
+                                    <span class="text-xs font-medium text-rose-600 dark:text-rose-400">{{ __('Habis') }}</span>
+                                @elseif (! $product->is_active)
+                                    <span class="text-xs font-medium text-slate-400 dark:text-slate-500">{{ __('Nonaktif') }}</span>
+                                @else
+                                    <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">{{ __('Tersedia') }}</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Tidak ada produk.') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+            <div class="border-t border-slate-100 px-6 py-3 dark:border-slate-800">{{ $products->links() }}</div>
         </div>
-        <table class="min-w-full text-sm">
-            <thead>
-                <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                    <th class="px-6 py-2">{{ __('No. Transaksi') }}</th>
-                    <th class="px-6 py-2">{{ __('Waktu') }}</th>
-                    <th class="px-6 py-2">{{ __('Status') }}</th>
-                    <th class="px-6 py-2">{{ __('Total') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                @forelse ($recentTransactions as $transaction)
-                    <tr>
-                        <td class="px-6 py-2.5 text-slate-900 dark:text-slate-100">{{ $transaction->transaction_no }}</td>
-                        <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ $transaction->created_at->format('d/m/Y H:i') }}</td>
-                        <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ ucfirst($transaction->status) }}</td>
-                        <td class="px-6 py-2.5 text-slate-900 dark:text-slate-100">Rp {{ number_format($transaction->total, 0, ',', '.') }}</td>
+    @elseif ($tab === 'categories')
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                <input wire:model.live.debounce.300ms="categorySearch" type="text" placeholder="{{ __('Cari kategori...') }}"
+                    class="w-full max-w-xs rounded-lg border-slate-200 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100" />
+            </div>
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                        <th class="px-6 py-2">{{ __('Nama') }}</th>
+                        <th class="px-6 py-2">{{ __('Jumlah Produk') }}</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="4" class="px-6 py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada transaksi.') }}</td>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    @forelse ($categories as $category)
+                        <tr>
+                            <td class="px-6 py-2.5 text-slate-900 dark:text-slate-100">{{ $category->name }}</td>
+                            <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ $category->products_count }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="2" class="px-6 py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Tidak ada kategori.') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+            <div class="border-t border-slate-100 px-6 py-3 dark:border-slate-800">{{ $categories->links() }}</div>
+        </div>
+    @else
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-card rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                <input wire:model.live.debounce.300ms="transactionSearch" type="text" placeholder="{{ __('Cari no. transaksi/customer...') }}"
+                    class="w-full max-w-xs rounded-lg border-slate-200 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100" />
+            </div>
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                        <th class="px-6 py-2">{{ __('No. Transaksi') }}</th>
+                        <th class="px-6 py-2">{{ __('Customer') }}</th>
+                        <th class="px-6 py-2">{{ __('Waktu') }}</th>
+                        <th class="px-6 py-2">{{ __('Status') }}</th>
+                        <th class="px-6 py-2">{{ __('Total') }}</th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    @forelse ($allTransactions as $transaction)
+                        <tr>
+                            <td class="px-6 py-2.5 text-slate-900 dark:text-slate-100">{{ $transaction->transaction_no }}</td>
+                            <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ $transaction->customer_name ?? '-' }}</td>
+                            <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ $transaction->created_at->format('d/m/Y H:i') }}</td>
+                            <td class="px-6 py-2.5 text-slate-500 dark:text-slate-400">{{ ucfirst($transaction->status) }}</td>
+                            <td class="px-6 py-2.5 text-slate-900 dark:text-slate-100">Rp {{ number_format($transaction->total, 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-slate-400 dark:text-slate-500">{{ __('Belum ada transaksi.') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+            <div class="border-t border-slate-100 px-6 py-3 dark:border-slate-800">{{ $allTransactions->links() }}</div>
+        </div>
+    @endif
 </div>
