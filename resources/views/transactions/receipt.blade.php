@@ -22,6 +22,7 @@
         .right { text-align: right; }
         .totals td { padding: 1px 0; }
         .print-btn { margin-top: 12px; text-align: center; }
+        .print-btn a { display: inline-block; background: #25d366; color: #fff; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; margin-top: 6px; }
         .bt-btn { margin-top: 6px; text-align: center; }
         .bt-btn button { display: none; }
         .bt-status { margin-top: 6px; text-align: center; font-size: 11px; white-space: pre-wrap; }
@@ -125,6 +126,11 @@
     <div class="print-btn">
         <button onclick="window.print()">Cetak</button>
     </div>
+    @if ($waLink = \App\Services\WhatsAppReceiptFormatter::waLink($transaction))
+        <div class="print-btn">
+            <a href="{{ $waLink }}" target="_blank" rel="noopener">Kirim via WhatsApp</a>
+        </div>
+    @endif
     <div class="bt-btn">
         <button id="bt-print-btn" onclick="printViaBluetooth(this)">Cetak via Bluetooth</button>
     </div>

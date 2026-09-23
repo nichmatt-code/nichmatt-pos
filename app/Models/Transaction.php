@@ -21,6 +21,7 @@ class Transaction extends Model
         'customer_id',
         'transaction_no',
         'customer_name',
+        'customer_phone',
         'note',
         'subtotal',
         'discount',

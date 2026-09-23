@@ -182,6 +182,13 @@
                         class="inline-flex justify-center items-center px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
                         {{ __('Cetak Struk') }}
                     </a>
+                    @if ($waLink = \App\Services\WhatsAppReceiptFormatter::waLink($lastTransaction))
+                        <a href="{{ $waLink }}" target="_blank" rel="noopener"
+                            class="inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium text-sm text-white transition">
+                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.87 9.87 0 0 0 4.75 1.21h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm5.8 14.09c-.24.68-1.4 1.3-1.93 1.37-.5.08-1.11.11-1.79-.11-.41-.13-.94-.3-1.62-.6-2.84-1.23-4.7-4.1-4.84-4.29-.14-.19-1.16-1.55-1.16-2.95 0-1.4.73-2.09 1-2.38.25-.27.55-.34.73-.34.19 0 .37 0 .53.01.17.01.4-.06.62.48.24.58.81 2 .88 2.15.07.15.12.32.02.51-.09.19-.14.31-.28.48-.14.16-.29.36-.42.48-.14.13-.28.28-.12.55.16.27.7 1.16 1.51 1.88 1.04.93 1.91 1.22 2.18 1.36.27.14.43.12.59-.07.16-.19.68-.79.86-1.06.18-.27.36-.22.6-.13.25.09 1.58.75 1.85.88.27.14.45.2.52.32.07.11.07.66-.17 1.34Z"/></svg>
+                            {{ __('Kirim via WhatsApp') }}
+                        </a>
+                    @endif
                     <x-primary-button wire:click="newTransaction" class="justify-center">
                         {{ __('Transaksi Baru') }}
                     </x-primary-button>
@@ -244,6 +251,13 @@
                             </div>
                         @endif
                     @endif
+                </div>
+                <div>
+                    <x-input-label for="customerPhone" value="Nomor WhatsApp (opsional)" />
+                    <x-text-input wire:model.blur="customerPhone" id="customerPhone" type="text"
+                        class="block w-full" placeholder="mis. 081234567890" />
+                    <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">{{ __('Diisi otomatis kalau memilih member. Isi manual untuk kirim struk lewat WhatsApp ke pelanggan.') }}</p>
+                    <x-input-error :messages="$errors->get('customerPhone')" class="mt-1" />
                 </div>
                 <div>
                     <x-input-label for="orderNote" value="Catatan Order (opsional)" />

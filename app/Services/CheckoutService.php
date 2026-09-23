@@ -21,7 +21,7 @@ class CheckoutService
 {
     /**
      * @param  array<int, array{product_id: ?int, package_id: ?int, name: string, price: int, cost_price: int, qty: int, note: string, unlimited: bool, type: string}>  $cart
-     * @param  array{user_id: ?int, customer_id: ?int, customer_name: string, order_note: string, subtotal: int, discount: int, coupon_id: ?int, coupon_discount_amount: int, tax_amount: int, service_charge_amount: int, total: int, payment_method: string, paid_amount: int, change_amount: int, claimed_self_order_id: ?int}  $meta
+     * @param  array{user_id: ?int, customer_id: ?int, customer_name: string, customer_phone?: ?string, order_note: string, subtotal: int, discount: int, coupon_id: ?int, coupon_discount_amount: int, tax_amount: int, service_charge_amount: int, total: int, payment_method: string, paid_amount: int, change_amount: int, claimed_self_order_id: ?int}  $meta
      */
     public function materialize(array $cart, array $meta): Transaction
     {
@@ -32,6 +32,7 @@ class CheckoutService
                 'customer_id' => $meta['customer_id'],
                 'transaction_no' => 'TRX-'.now()->format('Ymd-His').'-'.random_int(100, 999),
                 'customer_name' => $meta['customer_name'] !== '' ? $meta['customer_name'] : null,
+                'customer_phone' => ($meta['customer_phone'] ?? '') !== '' ? $meta['customer_phone'] : null,
                 'note' => $meta['order_note'] !== '' ? $meta['order_note'] : null,
                 'subtotal' => $meta['subtotal'],
                 'discount' => $meta['discount'],

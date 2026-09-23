@@ -48,6 +48,9 @@ class Terminal extends Component
 
     public ?int $selectedCustomerId = null;
 
+    /** Phone number the receipt gets sent to over WhatsApp after checkout - copied from the selected member, or typed in free-hand for a walk-in. */
+    public string $customerPhone = '';
+
     public string $orderNote = '';
 
     public string $orderCodeInput = '';
@@ -473,12 +476,14 @@ class Terminal extends Component
 
         $this->selectedCustomerId = $customer->id;
         $this->customerName = $customer->name;
+        $this->customerPhone = (string) $customer->phone;
     }
 
     public function clearSelectedCustomer(): void
     {
         $this->selectedCustomerId = null;
         $this->customerName = '';
+        $this->customerPhone = '';
     }
 
     /**
@@ -622,7 +627,7 @@ class Terminal extends Component
 
     public function newTransaction(): void
     {
-        $this->reset(['cart', 'discount', 'paidAmount', 'lastTransactionId', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId', 'couponCodeInput', 'appliedCouponId']);
+        $this->reset(['cart', 'discount', 'paidAmount', 'lastTransactionId', 'customerName', 'customerPhone', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId', 'couponCodeInput', 'appliedCouponId']);
         $this->discount = '0';
         $this->paymentMethod = 'cash';
     }
@@ -674,6 +679,7 @@ class Terminal extends Component
             'paymentMethod' => ['required', 'in:cash,qris,kartu'],
             'discount' => ['required', 'integer', 'min:0'],
             'customerName' => ['nullable', 'string', 'max:255'],
+            'customerPhone' => ['nullable', 'string', 'max:30'],
             'orderNote' => ['nullable', 'string', 'max:255'],
             'cart.*.price' => ['required', 'integer', 'min:0'],
         ]);
@@ -717,6 +723,7 @@ class Terminal extends Component
             'user_id' => Auth::id(),
             'customer_id' => $this->selectedCustomerId,
             'customer_name' => $this->customerName,
+            'customer_phone' => $this->customerPhone,
             'order_note' => $this->orderNote,
             'subtotal' => $this->subtotal,
             'discount' => (int) $this->discount,
@@ -731,7 +738,7 @@ class Terminal extends Component
             'claimed_self_order_id' => $this->claimedSelfOrderId,
         ]);
 
-        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId', 'couponCodeInput', 'appliedCouponId']);
+        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'customerPhone', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId', 'couponCodeInput', 'appliedCouponId']);
         $this->discount = '0';
         $this->lastTransactionId = $transaction->id;
     }
@@ -780,6 +787,7 @@ class Terminal extends Component
         $this->validate([
             'discount' => ['required', 'integer', 'min:0'],
             'customerName' => ['nullable', 'string', 'max:255'],
+            'customerPhone' => ['nullable', 'string', 'max:30'],
             'orderNote' => ['nullable', 'string', 'max:255'],
             'cart.*.price' => ['required', 'integer', 'min:0'],
         ]);
@@ -817,6 +825,7 @@ class Terminal extends Component
                 'cart' => $this->cart,
                 'customer_id' => $this->selectedCustomerId,
                 'customer_name' => $this->customerName,
+                'customer_phone' => $this->customerPhone,
                 'order_note' => $this->orderNote,
                 'subtotal' => $this->subtotal,
                 'discount' => (int) $this->discount,
@@ -912,6 +921,7 @@ class Terminal extends Component
             'user_id' => $qrisPayment->user_id,
             'customer_id' => $snapshot['customer_id'],
             'customer_name' => $snapshot['customer_name'],
+            'customer_phone' => $snapshot['customer_phone'] ?? null,
             'order_note' => $snapshot['order_note'],
             'subtotal' => $snapshot['subtotal'],
             'discount' => $snapshot['discount'],
@@ -928,7 +938,7 @@ class Terminal extends Component
 
         $qrisPayment->update(['status' => 'settled', 'paid_at' => now(), 'transaction_id' => $transaction->id]);
 
-        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId', 'couponCodeInput', 'appliedCouponId']);
+        $this->reset(['cart', 'discount', 'paidAmount', 'customerName', 'customerPhone', 'selectedCustomerId', 'orderNote', 'claimedSelfOrderId', 'couponCodeInput', 'appliedCouponId']);
         $this->discount = '0';
         $this->lastTransactionId = $transaction->id;
         $this->qrisPaymentId = null;
@@ -1141,7 +1151,7 @@ class Terminal extends Component
             'tags' => Tag::query()->orderBy('name')->get(),
             'packages' => Package::with('items.product')->where('is_active', true)->orderBy('name')->get(),
             'lastTransaction' => $this->lastTransactionId
-                ? Transaction::with('items')->find($this->lastTransactionId)
+                ? Transaction::with(['items', 'user', 'store'])->find($this->lastTransactionId)
                 : null,
         ]);
     }

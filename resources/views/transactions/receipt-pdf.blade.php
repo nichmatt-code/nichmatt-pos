@@ -44,6 +44,8 @@
         table.totals tr.grand td { border-top: 2px solid #1e293b; padding-top: 8px; font-size: 16px; font-weight: 700; }
         .footer { margin-top: 40px; text-align: center; color: #64748b; font-size: 12px; }
         .print-btn { margin-top: 24px; text-align: center; }
+        .print-btn a, .print-btn button { display: inline-block; margin: 0 4px; }
+        .wa-btn { background: #25d366; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-family: inherit; cursor: pointer; }
         @media print {
             .print-btn { display: none; }
         }
@@ -161,6 +163,9 @@
 
     <div class="print-btn">
         <button onclick="window.print()">{{ __('Cetak / Simpan sebagai PDF') }}</button>
+        @if ($waLink = \App\Services\WhatsAppReceiptFormatter::waLink($transaction))
+            <a href="{{ $waLink }}" target="_blank" rel="noopener" class="wa-btn">{{ __('Kirim via WhatsApp') }}</a>
+        @endif
     </div>
 </body>
 </html>
